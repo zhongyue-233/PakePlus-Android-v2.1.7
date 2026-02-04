@@ -1,11 +1,4629 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus</title>
-    </head>
-    <body>
-        PakePlus
-    </body>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>经营日报表管理系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* 基础样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            color: #333;
+            line-height: 1.5;
+            padding: 10px;
+            min-height: 100vh;
+            font-size: 14px;
+        }
+        
+        /* 容器 */
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        /* 头部样式 */
+        header {
+            background: linear-gradient(to right, #2c3e50, #4a6491);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .header-content {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header-left h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .header-left p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        .header-right {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        /* 按钮样式 */
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(to right, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .btn-primary:hover, .btn-primary:active {
+            background: linear-gradient(to right, #2980b9, #2573a7);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(to right, #27ae60, #219653);
+            color: white;
+        }
+        
+        .btn-success:hover, .btn-success:active {
+            background: linear-gradient(to right, #219653, #1e8449);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(to right, #f39c12, #e67e22);
+            color: white;
+        }
+        
+        .btn-warning:hover, .btn-warning:active {
+            background: linear-gradient(to right, #e67e22, #d35400);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(243, 156, 18, 0.3);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(to right, #e74c3c, #c0392b);
+            color: white;
+        }
+        
+        .btn-danger:hover, .btn-danger:active {
+            background: linear-gradient(to right, #c0392b, #a93226);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+        }
+        
+        .btn-info {
+            background: linear-gradient(to right, #17a2b8, #138496);
+            color: white;
+        }
+        
+        .btn-info:hover, .btn-info:active {
+            background: linear-gradient(to right, #138496, #117a8b);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(to right, #6c757d, #5a6268);
+            color: white;
+        }
+        
+        .btn-secondary:hover, .btn-secondary:active {
+            background: linear-gradient(to right, #5a6268, #545b62);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+        }
+        
+        .btn-sm {
+            padding: 6px 10px;
+            font-size: 0.8rem;
+        }
+        
+        /* 标签页样式 */
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            text-align: center;
+            color: #555;
+            min-width: 20%;
+        }
+        
+        .tab:hover {
+            background: #e9ecef;
+        }
+        
+        .tab.active {
+            background: white;
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* 卡片样式 */
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 0;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #f1f1f1;
+            flex-wrap: wrap;
+            cursor: pointer;
+            background-color: #f8f9fa;
+            transition: background-color 0.3s ease;
+        }
+        
+        .card-header:hover {
+            background-color: #e9ecef;
+        }
+        
+        .card-header.collapsed {
+            border-bottom: none;
+        }
+        
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 0;
+        }
+        
+        .card-title i {
+            color: #3498db;
+        }
+        
+        .collapse-toggle {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px;
+            transition: transform 0.3s ease;
+        }
+        
+        .collapse-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+        
+        .card-body {
+            padding: 15px;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            max-height: 1000px;
+            opacity: 1;
+        }
+        
+        .card-body.collapsed {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        
+        /* 表单样式 */
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            flex: 1 1 calc(50% - 10px);
+            min-width: 0;
+        }
+        
+        .form-group-full {
+            flex: 1 1 100%;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #444;
+            font-size: 0.9rem;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: border 0.3s ease;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+        }
+        
+        /* 表格样式 - 移动端优化 */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+        
+        th {
+            background: linear-gradient(to right, #3498db, #2980b9);
+            color: white;
+            font-weight: 600;
+            padding: 12px 8px;
+            text-align: left;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+        
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #f1f1f1;
+            font-size: 0.85rem;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        tr:hover {
+            background-color: #f0f7ff;
+        }
+        
+        .table-input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        
+        .table-select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            background-color: white;
+        }
+        
+        /* 汇总框样式 */
+        .summary-box {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        
+        .summary-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+        
+        .summary-item.income {
+            border-left-color: #27ae60;
+        }
+        
+        .summary-item.expense {
+            border-left-color: #e74c3c;
+        }
+        
+        .summary-item.net {
+            border-left-color: #9b59b6;
+        }
+        
+        .summary-item.currency {
+            border-left-color: #17a2b8;
+        }
+        
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 8px 0;
+            color: #2c3e50;
+        }
+        
+        .summary-label {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 600;
+        }
+        
+        /* 图表容器 */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            text-align: center;
+        }
+        
+        /* 汇率框样式 */
+        .currency-box {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+        
+        .currency-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            align-items: center;
+        }
+        
+        .currency-input-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .currency-input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #444;
+            font-size: 0.85rem;
+        }
+        
+        /* 提醒样式 */
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .alert-success {
+            background-color: #d5edda;
+            color: #155724;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #f39c12;
+        }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+        
+        /* 进度条样式 */
+        .progress {
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, #3498db, #2980b9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: width 0.3s ease;
+        }
+        
+        /* 数据备份样式 */
+        .backup-section {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+        
+        .backup-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        /* 底部样式 */
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            color: #666;
+            font-size: 0.8rem;
+            border-top: 1px solid #ddd;
+        }
+        
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* 移动端优化 */
+        .mobile-only {
+            display: none;
+        }
+        
+        .desktop-only {
+            display: block;
+        }
+        
+        /* 移动端横向滚动提示 */
+        .scroll-hint {
+            display: none;
+            text-align: center;
+            color: #666;
+            font-size: 0.8rem;
+            padding: 5px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+        
+        /* 高亮和状态样式 */
+        .highlight {
+            background-color: #fffacd !important;
+        }
+        
+        .negative {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .positive {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        /* 移动端菜单 */
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 900;
+            padding: 10px;
+        }
+        
+        .mobile-menu-items {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+        
+        .mobile-menu-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.75rem;
+            color: #666;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-menu-item.active {
+            background-color: #f0f7ff;
+            color: #3498db;
+        }
+        
+        .mobile-menu-item i {
+            font-size: 1.2rem;
+        }
+        
+        /* 文件上传样式 */
+        .file-input {
+            display: none;
+        }
+        
+        .file-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background: linear-gradient(to right, #6c757d, #5a6268);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        
+        .file-label:hover {
+            background: linear-gradient(to right, #5a6268, #545b62);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+        }
+        
+        /* 分析指标卡片 */
+        .metric-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #3498db;
+        }
+        
+        .metric-title {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        
+        .metric-change {
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+        
+        .metric-change.positive {
+            color: #27ae60;
+        }
+        
+        .metric-change.negative {
+            color: #e74c3c;
+        }
+        
+        /* 趋势指示器 */
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
+        
+        .trend-up {
+            color: #27ae60;
+        }
+        
+        .trend-down {
+            color: #e74c3c;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            body {
+                padding-bottom: 70px; /* 为移动端菜单留出空间 */
+            }
+            
+            .header-right {
+                flex-direction: row;
+            }
+            
+            .btn {
+                padding: 10px 12px;
+                font-size: 0.8rem;
+            }
+            
+            .tabs {
+                display: none; /* 移动端隐藏标签页，使用底部菜单 */
+            }
+            
+            .tab-content {
+                margin-bottom: 10px;
+            }
+            
+            .form-group {
+                flex: 1 1 100%;
+            }
+            
+            .table-container {
+                margin-top: 5px;
+            }
+            
+            th, td {
+                padding: 8px 6px;
+                font-size: 0.8rem;
+            }
+            
+            .table-input, .table-select {
+                padding: 5px 6px;
+                font-size: 0.8rem;
+            }
+            
+            .summary-box {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .summary-item {
+                padding: 12px;
+            }
+            
+            .summary-value {
+                font-size: 1.3rem;
+            }
+            
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .card-title {
+                font-size: 1rem;
+            }
+            
+            .currency-controls {
+                flex-direction: column;
+            }
+            
+            .currency-input-group {
+                width: 100%;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+            
+            .backup-controls {
+                flex-direction: column;
+            }
+            
+            .mobile-only {
+                display: block;
+            }
+            
+            .desktop-only {
+                display: none;
+            }
+            
+            .scroll-hint {
+                display: block;
+            }
+            
+            .mobile-menu {
+                display: block;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header-left h1 {
+                font-size: 1.3rem;
+            }
+            
+            .btn {
+                padding: 9px 10px;
+                font-size: 0.75rem;
+            }
+            
+            .summary-box {
+                grid-template-columns: 1fr;
+            }
+            
+            .tab {
+                min-width: 33%;
+            }
+            
+            .modal-content {
+                padding: 15px;
+            }
+            
+            .chart-container {
+                height: 200px;
+                padding: 10px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .header-left h1 {
+                font-size: 1.2rem;
+            }
+            
+            .btn {
+                padding: 8px;
+                font-size: 0.7rem;
+            }
+            
+            .summary-value {
+                font-size: 1.2rem;
+            }
+            
+            .chart-container {
+                height: 180px;
+            }
+        }
+        
+        /* 触摸设备优化 */
+        @media (hover: none) and (pointer: coarse) {
+            .btn:active {
+                transform: scale(0.98);
+            }
+            
+            input, select, textarea {
+                font-size: 16px; /* 防止iOS自动缩放 */
+            }
+        }
+        
+        /* 打印样式 */
+        @media print {
+            .mobile-menu, .header-right, .btn, .scroll-hint, .collapse-toggle {
+                display: none !important;
+            }
+            
+            body {
+                padding: 0;
+                background: white;
+            }
+            
+            .card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+                page-break-inside: avoid;
+            }
+            
+            .card-body.collapsed {
+                max-height: none !important;
+                opacity: 1 !important;
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="header-left">
+                    <h1><i class="fas fa-chart-line"></i> 经营日报表</h1>
+                    <p>专业经营分析系统 - 支持多币种汇率转换</p>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-primary" onclick="saveData()">
+                        <i class="fas fa-save"></i> <span class="desktop-only">保存</span>
+                    </button>
+                    <button class="btn btn-success" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel"></i> <span class="desktop-only">导出</span>
+                    </button>
+                    <button class="btn btn-warning" onclick="generateWeeklyReport()">
+                        <i class="fas fa-chart-bar"></i> <span class="desktop-only">周报</span>
+                    </button>
+                    <button class="btn btn-info" onclick="showExchangeModal()">
+                        <i class="fas fa-exchange-alt"></i> <span class="desktop-only">汇率</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="showBackupModal()">
+                        <i class="fas fa-database"></i> <span class="desktop-only">备份</span>
+                    </button>
+                    <button class="btn btn-danger" onclick="resetForm()">
+                        <i class="fas fa-redo"></i> <span class="desktop-only">重置</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- 桌面端标签页 -->
+        <div class="tabs desktop-only">
+            <button class="tab active" onclick="openTab(event, 'daily')">日报表</button>
+            <button class="tab" onclick="openTab(event, 'inventory')">库存</button>
+            <button class="tab" onclick="openTab(event, 'exchange')">汇率</button>
+            <button class="tab" onclick="openTab(event, 'weekly')">周盘点</button>
+            <button class="tab" onclick="openTab(event, 'analytics')">分析</button>
+            <button class="tab" onclick="openTab(event, 'backup')">数据管理</button>
+        </div>
+        
+        <!-- 数据备份与恢复模块 -->
+        <div id="backup" class="tab-content">
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-database"></i> 数据备份与恢复</h2>
+                    <button class="collapse-toggle">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 建议定期备份数据，以防数据丢失。所有数据均保存在浏览器本地存储中。
+                    </div>
+                    
+                    <div class="backup-section">
+                        <h3 style="margin-bottom: 10px; color: #2c3e50; font-size: 1rem;">数据统计</h3>
+                        <div class="summary-box">
+                            <div class="summary-item">
+                                <div class="summary-label">日报记录</div>
+                                <div class="summary-value" id="dailyRecordsCount">0</div>
+                                <div>条日报记录</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">库存商品</div>
+                                <div class="summary-value" id="inventoryItemsCount">0</div>
+                                <div>个库存商品</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">数据大小</div>
+                                <div class="summary-value" id="dataSize">0 KB</div>
+                                <div>占用空间</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">最后备份</div>
+                                <div class="summary-value" id="lastBackupDate">从未</div>
+                                <div>备份时间</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="backup-section">
+                        <h3 style="margin-bottom: 10px; color: #2c3e50; font-size: 1rem;">数据备份</h3>
+                        <p style="margin-bottom: 15px; color: #666;">将当前所有数据导出为JSON文件，可用于备份或迁移数据。</p>
+                        
+                        <div class="backup-controls">
+                            <button class="btn btn-success" onclick="exportBackup()">
+                                <i class="fas fa-download"></i> 导出备份文件
+                            </button>
+                            <button class="btn btn-warning" onclick="createAutoBackup()">
+                                <i class="fas fa-history"></i> 创建自动备份
+                            </button>
+                            <button class="btn btn-danger" onclick="clearAllData()">
+                                <i class="fas fa-trash"></i> 清除所有数据
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="backup-section">
+                        <h3 style="margin-bottom: 10px; color: #2c3e50; font-size: 1rem;">数据恢复</h3>
+                        <p style="margin-bottom: 15px; color: #666;">从之前导出的备份文件恢复数据，或从Excel文件导入数据。</p>
+                        
+                        <div class="backup-controls">
+                            <input type="file" id="restoreFile" class="file-input" accept=".json,.xlsx,.xls" onchange="handleRestoreFile(event)">
+                            <label for="restoreFile" class="file-label">
+                                <i class="fas fa-upload"></i> 选择备份文件
+                            </label>
+                            
+                            <button class="btn btn-primary" onclick="showImportModal()">
+                                <i class="fas fa-file-import"></i> Excel导入
+                            </button>
+                            
+                            <button class="btn btn-secondary" onclick="loadSampleData()">
+                                <i class="fas fa-magic"></i> 加载示例数据
+                            </button>
+                        </div>
+                        
+                        <div id="restoreResult" class="alert" style="display: none; margin-top: 15px;">
+                            <!-- 恢复结果将显示在这里 -->
+                        </div>
+                    </div>
+                    
+                    <div class="backup-section">
+                        <h3 style="margin-bottom: 10px; color: #2c3e50; font-size: 1rem;">数据优化</h3>
+                        <p style="margin-bottom: 15px; color: #666;">优化数据存储，清理无效记录，提高系统性能。</p>
+                        
+                        <div class="backup-controls">
+                            <button class="btn btn-info" onclick="optimizeData()">
+                                <i class="fas fa-broom"></i> 优化数据存储
+                            </button>
+                            <button class="btn btn-secondary" onclick="checkDataIntegrity()">
+                                <i class="fas fa-check-circle"></i> 检查数据完整性
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 汇率转换模块 -->
+        <div id="exchange" class="tab-content">
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-exchange-alt"></i> 汇率转换设置</h2>
+                    <button class="collapse-toggle">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 系统默认使用人民币(CNY)作为基准货币。所有外币金额将自动转换为人民币计算。
+                    </div>
+                    
+                    <div class="currency-box">
+                        <h3 style="margin-bottom: 10px; color: #2c3e50; font-size: 1rem;">当前汇率</h3>
+                        <div class="currency-controls">
+                            <div class="currency-input-group">
+                                <label for="usdRate">1美元(USD) =</label>
+                                <input type="number" id="usdRate" min="0" step="0.001" value="7.20" onchange="updateExchangeRates()">
+                            </div>
+                            <div class="currency-input-group">
+                                <label for="ngnRate">1奈拉(NGN) =</label>
+                                <input type="number" id="ngnRate" min="0" step="0.0001" value="0.012" onchange="updateExchangeRates()">
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 15px; display: flex; gap: 10px;">
+                            <button class="btn btn-primary" onclick="updateExchangeRates()">
+                                <i class="fas fa-sync-alt"></i> 更新汇率
+                            </button>
+                            <button class="btn btn-warning" onclick="resetExchangeRates()">
+                                <i class="fas fa-undo"></i> 重置汇率
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-box">
+                        <div class="summary-item currency">
+                            <div class="summary-label">基准货币</div>
+                            <div class="summary-value">CNY</div>
+                            <div>人民币</div>
+                        </div>
+                        <div class="summary-item currency">
+                            <div class="summary-label">美元汇率</div>
+                            <div class="summary-value" id="usdRateDisplay">7.20</div>
+                            <div>USD → CNY</div>
+                        </div>
+                        <div class="summary-item currency">
+                            <div class="summary-label">奈拉汇率</div>
+                            <div class="summary-value" id="ngnRateDisplay">0.012</div>
+                            <div>NGN → CNY</div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>汇率变动会影响所有外币金额的计算，请在输入外币金额前确认汇率设置正确。</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-calculator"></i> 快速汇率换算器</h2>
+                    <button class="collapse-toggle">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="convertAmount">金额</label>
+                            <input type="number" id="convertAmount" min="0" step="0.01" placeholder="输入金额" value="100">
+                        </div>
+                        <div class="form-group">
+                            <label for="convertFrom">从货币</label>
+                            <select id="convertFrom" class="table-select">
+                                <option value="CNY">人民币 (CNY)</option>
+                                <option value="USD">美元 (USD)</option>
+                                <option value="NGN">奈拉 (NGN)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="convertTo">到货币</label>
+                            <select id="convertTo" class="table-select">
+                                <option value="CNY">人民币 (CNY)</option>
+                                <option value="USD" selected>美元 (USD)</option>
+                                <option value="NGN">奈拉 (NGN)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 15px;">
+                        <button class="btn btn-primary" onclick="quickConvert()" style="width: 100%; max-width: 200px;">
+                            <i class="fas fa-exchange-alt"></i> 转换
+                        </button>
+                    </div>
+                    
+                    <div id="conversionResult" class="alert alert-success" style="display: none; margin-top: 15px; text-align: center;">
+                        <!-- 转换结果将显示在这里 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 日报表标签内容 -->
+        <div id="daily" class="tab-content active">
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-calendar-day"></i> 基本信息</h2>
+                    <button class="collapse-toggle">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reportDate">日期</label>
+                            <input type="date" id="reportDate" value="" onchange="updateWeekday()">
+                        </div>
+                        <div class="form-group">
+                            <label for="weekday">星期</label>
+                            <input type="text" id="weekday" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="recorder">记录人</label>
+                            <input type="text" id="recorder" placeholder="请输入姓名">
+                        </div>
+                        <div class="form-group">
+                            <label for="weather">天气</label>
+                            <select id="weather" class="table-select">
+                                <option value="">选择天气</option>
+                                <option value="晴">晴</option>
+                                <option value="阴">阴</option>
+                                <option value="多云">多云</option>
+                                <option value="雨">雨</option>
+                                <option value="雪">雪</option>
+                                <option value="雾">雾</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group form-group-full">
+                            <label for="dailyNotes">备注说明</label>
+                            <textarea id="dailyNotes" rows="2" placeholder="记录当日特殊情况或备注信息"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 汇率显示 -->
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-coins"></i> 今日汇率</h2>
+                    <button class="collapse-toggle">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="summary-box">
+                        <div class="summary-item currency">
+                            <div class="summary-label">美元</div>
+                            <div class="summary-value" id="dailyUsdRate">7.20</div>
+                            <div>1 USD = CNY</div>
+                        </div>
+                        <div class="summary-item currency">
+                            <div class="summary-label">奈拉</div>
+                            <div class="summary-value" id="dailyNgnRate">0.012</div>
+                            <div>1 NGN = CNY</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 支出明细 -->
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-money-bill-wave"></i> 每日支出明细</h2>
+                    <div>
+                        <button class="btn btn-sm btn-primary" onclick="addExpenseRow()">
+                            <i class="fas fa-plus"></i> 添加
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="addMultipleExpenseRows(5)">
+                            <i class="fas fa-plus-circle"></i> 添加5行
+                        </button>
+                        <button class="collapse-toggle">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="scroll-hint mobile-only">
+                        <i class="fas fa-arrows-left-right"></i> 左右滑动查看完整表格
+                    </div>
+                    <div class="table-container">
+                        <table id="expenseTable">
+                            <thead>
+                                <tr>
+                                    <th width="15%">类别</th>
+                                    <th width="20%">项目</th>
+                                    <th width="15%">金额</th>
+                                    <th width="15%">货币</th>
+                                    <th width="15%">人民币</th>
+                                    <th width="15%">备注</th>
+                                    <th width="10%">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expenseBody">
+                                <!-- 行将通过JavaScript动态添加 -->
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" style="text-align: right; font-weight: bold;">支出合计(人民币)：</td>
+                                    <td id="totalExpense" style="font-weight: bold; color: #e74c3c;">¥0.00</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 收入明细 -->
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-cash-register"></i> 每日收入明细</h2>
+                    <div>
+                        <button class="btn btn-sm btn-success" onclick="addIncomeRow()">
+                            <i class="fas fa-plus"></i> 添加
+                        </button>
+                        <button class="btn btn-sm btn-warning" onclick="addMultipleIncomeRows(5)">
+                            <i class="fas fa-plus-circle"></i> 添加5行
+                        </button>
+                        <button class="collapse-toggle">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="scroll-hint mobile-only">
+                        <i class="fas fa-arrows-left-right"></i> 左右滑动查看完整表格
+                    </div>
+                    <div class="table-container">
+                        <table id="incomeTable">
+                            <thead>
+                                <tr>
+                                    <th>品类</th>
+                                    <th>昨日</th>
+                                    <th>进货</th>
+                                    <th>卖出</th>
+                                    <th>单价</th>
+                                    <th>货币</th>
+                                    <th>成本</th>
+                                    <th>差价</th>
+                                    <th>销售额</th>
+                                    <th>今日余量</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="incomeBody">
+                                <!-- 行将通过JavaScript动态添加 -->
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="8" style="text-align: right; font-weight: bold;">收入合计(人民币)：</td>
+                                    <td id="totalIncome" style="font-weight: bold; color: #27ae60;">¥0.00</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 报损明细 -->
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-exclamation-triangle"></i> 每日报损明细</h2>
+                    <div>
+                        <button class="btn btn-sm btn-warning" onclick="addLossRow()">
+                            <i class="fas fa-plus"></i> 添加
+                        </button>
+                        <button class="collapse-toggle">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table id="lossTable">
+                            <thead>
+                                <tr>
+                                    <th width="20%">品类</th>
+                                    <th width="15%">数量</th>
+                                    <th width="15%">原因</th>
+                                    <th width="15%">损失金额</th>
+                                    <th width="15%">货币</th>
+                                    <th width="10%">人民币</th>
+                                    <th width="10%">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lossBody">
+                                <!-- 行将通过JavaScript动态添加 -->
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" style="text-align: right; font-weight: bold;">报损合计(人民币)：</td>
+                                    <td></td>
+                                    <td id="totalLoss" style="font-weight: bold; color: #e67e22;">¥0.00</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 本日结余 -->
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-balance-scale"></i> 本日结余</h2>
+                    <button class="collapse-toggle">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="summary-box">
+                        <div class="summary-item income">
+                            <div class="summary-label">总收入</div>
+                            <div class="summary-value" id="dailyIncome">¥0.00</div>
+                            <div>当日所有收入</div>
+                        </div>
+                        <div class="summary-item expense">
+                            <div class="summary-label">总支出</div>
+                            <div class="summary-value" id="dailyExpense">¥0.00</div>
+                            <div>当日所有支出</div>
+                        </div>
+                        <div class="summary-item net">
+                            <div class="summary-label">净收入</div>
+                            <div class="summary-value" id="dailyNet">¥0.00</div>
+                            <div id="netStatus">经营结果</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">毛利率</div>
+                            <div class="summary-value" id="dailyGrossMargin">0.00%</div>
+                            <div>当日毛利率</div>
+                        </div>
+                    </div>
+                    
+                    <div id="dailyAlert" class="alert" style="display: none;">
+                        <!-- 提醒信息将动态显示 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 库存管理标签内容 -->
+        <div id="inventory" class="tab-content">
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-boxes"></i> 库存管理</h2>
+                    <div>
+                        <button class="btn btn-sm btn-primary" onclick="addInventoryItem()">
+                            <i class="fas fa-plus"></i> 添加商品
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="showBulkImportModal()">
+                            <i class="fas fa-file-import"></i> 批量导入
+                        </button>
+                        <button class="collapse-toggle">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="scroll-hint mobile-only">
+                        <i class="fas fa-arrows-left-right"></i> 左右滑动查看完整表格
+                    </div>
+                    <div class="table-container">
+                        <table id="inventoryTable">
+                            <thead>
+                                <tr>
+                                    <th width="10%">序号</th>
+                                    <th width="20%">品类名称</th>
+                                    <th width="15%">成本</th>
+                                    <th width="10%">货币</th>
+                                    <th width="15%">售价</th>
+                                    <th width="10%">货币</th>
+                                    <th width="10%">安全库存</th>
+                                    <th width="10%">当前库存</th>
+                                    <th width="10%">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventoryBody">
+                                <!-- 库存数据将通过JavaScript动态添加 -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="alert alert-warning" id="inventoryAlert" style="display: none; margin-top: 15px;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span id="inventoryAlertText"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-chart-pie"></i> 库存分析</h2>
+                    <button class="collapse-toggle">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="summary-box">
+                        <div class="summary-item">
+                            <div class="summary-label">总库存价值</div>
+                            <div class="summary-value" id="totalInventoryValue">¥0.00</div>
+                            <div>按成本计算</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">总销售额潜力</div>
+                            <div class="summary-value" id="totalSalesPotential">¥0.00</div>
+                            <div>按售价计算</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">平均利润率</div>
+                            <div class="summary-value" id="avgProfitMargin">0.00%</div>
+                            <div>平均毛利率</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">低库存商品</div>
+                            <div class="summary-value" id="lowStockCount">0</div>
+                            <div>低于安全库存</div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-title">库存价值分布</div>
+                        <canvas id="inventoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 周盘点标签内容 -->
+        <div id="weekly" class="tab-content">
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-chart-bar"></i> 周度盘点</h2>
+                    <div>
+                        <button class="btn btn-sm btn-success" onclick="generateWeeklyReport()">
+                            <i class="fas fa-calculator"></i> 生成周报
+                        </button>
+                        <button class="collapse-toggle">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="weekStartDate">开始日期</label>
+                            <input type="date" id="weekStartDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="weekEndDate">结束日期</label>
+                            <input type="date" id="weekEndDate">
+                        </div>
+                    </div>
+                    
+                    <div class="summary-box">
+                        <div class="summary-item">
+                            <div class="summary-label">周总收入</div>
+                            <div class="summary-value" id="weeklyIncome">¥0.00</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">周总支出</div>
+                            <div class="summary-value" id="weeklyExpense">¥0.00</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">周净收入</div>
+                            <div class="summary-value" id="weeklyNet">¥0.00</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">周报损额</div>
+                            <div class="summary-value" id="weeklyLoss">¥0.00</div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin: 20px 0 10px 0; color: #2c3e50; font-size: 1rem;">库存盘点对比</h3>
+                    <div class="scroll-hint mobile-only">
+                        <i class="fas fa-arrows-left-right"></i> 左右滑动查看完整表格
+                    </div>
+                    <div class="table-container">
+                        <table id="weeklyInventoryTable">
+                            <thead>
+                                <tr>
+                                    <th>品类</th>
+                                    <th>账面</th>
+                                    <th>实际</th>
+                                    <th>差异</th>
+                                    <th>差异率</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="weeklyInventoryBody">
+                                <!-- 周盘点数据将通过JavaScript动态添加 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-chart-line"></i> 周度趋势</h2>
+                    <button class="collapse-toggle">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <div class="chart-title">周度收入支出趋势</div>
+                        <canvas id="weeklyTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 经营分析标签内容 -->
+        <div id="analytics" class="tab-content">
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-chart-pie"></i> 经营分析概览</h2>
+                    <div>
+                        <button class="btn btn-sm btn-primary" onclick="refreshAnalytics()">
+                            <i class="fas fa-sync-alt"></i> 刷新
+                        </button>
+                        <button class="collapse-toggle">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="analysisPeriod">分析周期</label>
+                            <select id="analysisPeriod" onchange="updateAnalytics()">
+                                <option value="7">最近7天</option>
+                                <option value="30" selected>最近30天</option>
+                                <option value="90">最近90天</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="analysisCurrency">分析货币</label>
+                            <select id="analysisCurrency" onchange="updateAnalytics()">
+                                <option value="CNY">人民币 (CNY)</option>
+                                <option value="USD">美元 (USD)</option>
+                                <option value="NGN">奈拉 (NGN)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-box">
+                        <div class="summary-item">
+                            <div class="summary-label">平均日收入</div>
+                            <div class="summary-value" id="avgDailyIncome">¥0.00</div>
+                            <div id="avgDailyIncomeChange"></div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">平均日支出</div>
+                            <div class="summary-value" id="avgDailyExpense">¥0.00</div>
+                            <div id="avgDailyExpenseChange"></div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">毛利率</div>
+                            <div class="summary-value" id="grossMargin">0.00%</div>
+                            <div id="grossMarginChange"></div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">库存周转率</div>
+                            <div class="summary-value" id="inventoryTurnover">0.00</div>
+                            <div id="inventoryTurnoverChange"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-chart-line"></i> 收入支出趋势</h2>
+                    <button class="collapse-toggle">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <div class="chart-title">收入与支出趋势对比</div>
+                        <canvas id="incomeExpenseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-chart-bar"></i> 支出类别分析</h2>
+                    <button class="collapse-toggle">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <div class="chart-title">支出类别分布</div>
+                        <canvas id="expenseCategoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-star"></i> 经营指标分析</h2>
+                    <button class="collapse-toggle">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <div class="metric-card">
+                                <div class="metric-title">经营利润率</div>
+                                <div class="metric-value" id="operatingMargin">0.00%</div>
+                                <div class="metric-change" id="operatingMarginChange"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="metric-card">
+                                <div class="metric-title">日均客流量</div>
+                                <div class="metric-value" id="avgDailyCustomers">0</div>
+                                <div class="metric-change" id="avgDailyCustomersChange"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <div class="metric-card">
+                                <div class="metric-title">客单价</div>
+                                <div class="metric-value" id="avgCustomerSpending">¥0.00</div>
+                                <div class="metric-change" id="avgCustomerSpendingChange"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="metric-card">
+                                <div class="metric-title">投资回报率</div>
+                                <div class="metric-value" id="roi">0.00%</div>
+                                <div class="metric-change" id="roiChange"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info" style="margin-top: 15px;">
+                        <i class="fas fa-info-circle"></i>
+                        <span>分析数据基于最近90天的经营数据计算，提供全面的经营指标分析。</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header" onclick="toggleCollapse(this)">
+                    <h2 class="card-title"><i class="fas fa-calendar-alt"></i> 月度对比分析</h2>
+                    <button class="collapse-toggle">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <div class="chart-title">月度收入对比</div>
+                        <canvas id="monthlyComparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 移动端底部菜单 -->
+        <div class="mobile-menu">
+            <div class="mobile-menu-items">
+                <div class="mobile-menu-item active" onclick="openMobileTab('daily')">
+                    <i class="fas fa-calendar-day"></i>
+                    <span>日报</span>
+                </div>
+                <div class="mobile-menu-item" onclick="openMobileTab('inventory')">
+                    <i class="fas fa-boxes"></i>
+                    <span>库存</span>
+                </div>
+                <div class="mobile-menu-item" onclick="openMobileTab('exchange')">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>汇率</span>
+                </div>
+                <div class="mobile-menu-item" onclick="openMobileTab('weekly')">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>周报</span>
+                </div>
+                <div class="mobile-menu-item" onclick="openMobileTab('analytics')">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>分析</span>
+                </div>
+                <div class="mobile-menu-item" onclick="showExportModal()">
+                    <i class="fas fa-file-excel"></i>
+                    <span>导出</span>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>经营日报表系统 v3.0 | 专业经营分析 | 数据安全备份 | 多币种支持</p>
+        </footer>
+    </div>
+
+    <!-- 汇率模态框 -->
+    <div id="exchangeModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 15px; color: #2c3e50; font-size: 1.2rem;"><i class="fas fa-exchange-alt"></i> 汇率设置</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modalUsdRate">美元汇率</label>
+                    <input type="number" id="modalUsdRate" min="0" step="0.001" value="7.20" placeholder="1 USD = CNY">
+                </div>
+                <div class="form-group">
+                    <label for="modalNgnRate">奈拉汇率</label>
+                    <input type="number" id="modalNgnRate" min="0" step="0.0001" value="0.012" placeholder="1 NGN = CNY">
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-success" onclick="saveExchangeModal()" style="flex: 2;">
+                    <i class="fas fa-save"></i> 保存汇率
+                </button>
+                <button class="btn btn-danger" onclick="closeModal('exchangeModal')" style="flex: 1;">
+                    <i class="fas fa-times"></i> 取消
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导出Excel模态框 -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 15px; color: #2c3e50; font-size: 1.2rem;"><i class="fas fa-file-excel"></i> 导出Excel报表</h2>
+            <div class="form-row">
+                <div class="form-group form-group-full">
+                    <label for="exportDateRange">导出范围</label>
+                    <select id="exportDateRange" class="table-select">
+                        <option value="today">今日报表</option>
+                        <option value="week">本周报表</option>
+                        <option value="month">本月报表</option>
+                        <option value="quarter">本季度报表</option>
+                        <option value="all">全部数据</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group form-group-full">
+                    <label>包含的工作表</label>
+                    <div style="margin-top: 10px;">
+                        <label style="display: block; margin-bottom: 8px;">
+                            <input type="checkbox" id="includeDaily" checked> 日报表
+                        </label>
+                        <label style="display: block; margin-bottom: 8px;">
+                            <input type="checkbox" id="includeInventory" checked> 库存表
+                        </label>
+                        <label style="display: block; margin-bottom: 8px;">
+                            <input type="checkbox" id="includeWeekly"> 周盘点表
+                        </label>
+                        <label style="display: block; margin-bottom: 8px;">
+                            <input type="checkbox" id="includeExchange"> 汇率记录
+                        </label>
+                        <label style="display: block; margin-bottom: 8px;">
+                            <input type="checkbox" id="includeAnalytics"> 分析报告
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group form-group-full">
+                    <label for="exportCurrency">导出货币</label>
+                    <select id="exportCurrency" class="table-select">
+                        <option value="CNY">人民币 (CNY)</option>
+                        <option value="USD">美元 (USD)</option>
+                        <option value="NGN">奈拉 (NGN)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-success" onclick="performExport()" style="flex: 2;">
+                    <i class="fas fa-download"></i> 导出Excel
+                </button>
+                <button class="btn btn-danger" onclick="closeModal('exportModal')" style="flex: 1;">
+                    <i class="fas fa-times"></i> 取消
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据导入模态框 -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 15px; color: #2c3e50; font-size: 1.2rem;"><i class="fas fa-file-import"></i> Excel数据导入</h2>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 支持从Excel文件导入数据。请确保Excel文件格式正确。
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group form-group-full">
+                    <label for="importType">导入类型</label>
+                    <select id="importType" class="table-select">
+                        <option value="daily">日报表数据</option>
+                        <option value="inventory">库存数据</option>
+                        <option value="both">日报表和库存数据</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group form-group-full">
+                    <label for="importFile">选择Excel文件</label>
+                    <input type="file" id="importFile" accept=".xlsx,.xls" class="table-input">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group form-group-full">
+                    <label>导入选项</label>
+                    <div style="margin-top: 10px;">
+                        <label style="display: block; margin-bottom: 8px;">
+                            <input type="checkbox" id="importOverwrite" checked> 覆盖重复数据
+                        </label>
+                        <label style="display: block; margin-bottom: 8px;">
+                            <input type="checkbox" id="importValidate" checked> 验证数据格式
+                        </label>
+                        <label style="display: block; margin-bottom: 8px;">
+                            <input type="checkbox" id="importBackup"> 导入前备份当前数据
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="importPreview" style="display: none; margin-top: 15px;">
+                <h3 style="font-size: 1rem; margin-bottom: 10px; color: #2c3e50;">导入预览</h3>
+                <div id="importPreviewContent" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 6px;">
+                    <!-- 预览内容将显示在这里 -->
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-success" onclick="performImport()" style="flex: 2;">
+                    <i class="fas fa-upload"></i> 开始导入
+                </button>
+                <button class="btn btn-danger" onclick="closeModal('importModal')" style="flex: 1;">
+                    <i class="fas fa-times"></i> 取消
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量导入模态框 -->
+    <div id="bulkImportModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 15px; color: #2c3e50; font-size: 1.2rem;"><i class="fas fa-file-import"></i> 批量库存导入</h2>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 批量导入库存商品数据。每行格式：商品名称,成本,成本货币,售价,售价货币,安全库存,当前库存
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group form-group-full">
+                    <label for="bulkImportData">导入数据（每行一个商品）</label>
+                    <textarea id="bulkImportData" rows="10" placeholder="示例：
+商品A,10.00,CNY,15.00,CNY,20,100
+商品B,8.00,CNY,12.00,CNY,15,80
+商品C,5.00,CNY,8.00,CNY,30,150"></textarea>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-success" onclick="performBulkImport()" style="flex: 2;">
+                    <i class="fas fa-upload"></i> 导入数据
+                </button>
+                <button class="btn btn-danger" onclick="closeModal('bulkImportModal')" style="flex: 1;">
+                    <i class="fas fa-times"></i> 取消
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 备份模态框 -->
+    <div id="backupModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 15px; color: #2c3e50; font-size: 1.2rem;"><i class="fas fa-database"></i> 数据备份管理</h2>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 管理数据备份，确保数据安全。系统会自动创建定期备份。
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group form-group-full">
+                    <label for="backupList">可用备份</label>
+                    <div id="backupList" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 6px;">
+                        <!-- 备份列表将显示在这里 -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group form-group-full">
+                    <label>备份选项</label>
+                    <div style="margin-top: 10px;">
+                        <label style="display: block; margin-bottom: 8px;">
+                            <input type="checkbox" id="autoBackup" checked> 启用自动备份（每天）
+                        </label>
+                        <label style="display: block; margin-bottom: 8px;">
+                            <input type="checkbox" id="backupCompression" checked> 启用备份压缩
+                        </label>
+                        <label style="display: block; margin-bottom: 8px;">
+                            <input type="checkbox" id="backupEncryption"> 启用备份加密
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-success" onclick="createManualBackup()" style="flex: 1;">
+                    <i class="fas fa-plus"></i> 新建备份
+                </button>
+                <button class="btn btn-primary" onclick="restoreSelectedBackup()" style="flex: 1;">
+                    <i class="fas fa-history"></i> 恢复选中
+                </button>
+                <button class="btn btn-danger" onclick="closeModal('backupModal')" style="flex: 1;">
+                    <i class="fas fa-times"></i> 关闭
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let dailyReports = [];
+        let inventoryItems = [];
+        let exchangeRates = {
+            CNY: 1.00,
+            USD: 7.20,
+            NGN: 0.012
+        };
+        let autoBackups = [];
+        let charts = {};
+        let currentDate = '';
+        
+        // 货币符号映射
+        const currencySymbols = {
+            CNY: '¥',
+            USD: '$',
+            NGN: '₦'
+        };
+        
+        // 货币名称映射
+        const currencyNames = {
+            CNY: '人民币',
+            USD: '美元',
+            NGN: '奈拉'
+        };
+        
+        // 星期映射
+        const weekdays = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+        
+        // 支出类别
+        const expenseCategories = [
+            '固定支出',
+            '日常支出', 
+            '采购支出',
+            '工资支出',
+            '营销支出',
+            '其他支出'
+        ];
+        
+        // 初始化函数
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置默认日期为今天
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            currentDate = todayStr;
+            document.getElementById('reportDate').value = todayStr;
+            updateWeekday();
+            
+            // 设置周盘点日期范围（本周）
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay() + 1);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            
+            document.getElementById('weekStartDate').value = weekStart.toISOString().split('T')[0];
+            document.getElementById('weekEndDate').value = weekEnd.toISOString().split('T')[0];
+            
+            // 加载所有数据
+            loadAllData();
+            
+            // 初始化表格
+            initExpenseTable();
+            initIncomeTable();
+            initLossTable();
+            
+            // 计算初始汇总
+            calculateSummaries();
+            
+            // 更新数据统计
+            updateDataStats();
+            
+            // 移动端初始化
+            initMobile();
+            
+            // 初始化折叠状态
+            initCollapse();
+            
+            // 初始化图表
+            initCharts();
+            
+            // 设置自动保存
+            setupAutoSave();
+            
+            // 设置自动备份
+            setupAutoBackup();
+            
+            console.log('系统初始化完成，版本：3.0');
+        });
+        
+        // 加载所有数据
+        function loadAllData() {
+            try {
+                // 加载日报表数据
+                const savedReports = localStorage.getItem('dailyReports');
+                if (savedReports) {
+                    dailyReports = JSON.parse(savedReports);
+                }
+                
+                // 加载库存数据
+                const savedInventory = localStorage.getItem('inventoryItems');
+                if (savedInventory) {
+                    inventoryItems = JSON.parse(savedInventory);
+                    updateInventoryTable();
+                } else {
+                    // 如果没有库存数据，初始化空数组
+                    inventoryItems = [];
+                    updateInventoryTable();
+                }
+                
+                // 加载汇率数据
+                const savedRates = localStorage.getItem('exchangeRates');
+                if (savedRates) {
+                    exchangeRates = JSON.parse(savedRates);
+                }
+                
+                // 加载备份数据
+                const savedBackups = localStorage.getItem('autoBackups');
+                if (savedBackups) {
+                    autoBackups = JSON.parse(savedBackups);
+                }
+                
+                updateExchangeDisplay();
+                console.log('数据加载成功');
+            } catch (error) {
+                console.error('数据加载失败:', error);
+                alert('数据加载失败，系统将使用默认设置。错误：' + error.message);
+            }
+        }
+        
+        // 初始化折叠功能
+        function initCollapse() {
+            document.querySelectorAll('.card-header').forEach(header => {
+                header.classList.remove('collapsed');
+                const toggleBtn = header.querySelector('.collapse-toggle');
+                if (toggleBtn) toggleBtn.classList.remove('collapsed');
+                
+                const body = header.nextElementSibling;
+                if (body) body.classList.remove('collapsed');
+            });
+        }
+        
+        // 切换折叠状态
+        function toggleCollapse(header) {
+            if (event.target.closest('button') && !event.target.closest('button').classList.contains('collapse-toggle')) {
+                return;
+            }
+            
+            header.classList.toggle('collapsed');
+            const toggleBtn = header.querySelector('.collapse-toggle');
+            if (toggleBtn) toggleBtn.classList.toggle('collapsed');
+            
+            const body = header.nextElementSibling;
+            if (body) body.classList.toggle('collapsed');
+        }
+        
+        // 初始化图表
+        function initCharts() {
+            // 初始化图表对象
+            charts = {
+                inventoryChart: null,
+                weeklyTrendChart: null,
+                incomeExpenseChart: null,
+                expenseCategoryChart: null,
+                monthlyComparisonChart: null
+            };
+        }
+        
+        // 设置自动保存
+        function setupAutoSave() {
+            // 每30秒自动保存一次
+            setInterval(() => {
+                if (hasUnsavedChanges()) {
+                    saveData(false); // 静默保存
+                }
+            }, 30000);
+            
+            // 页面关闭前保存
+            window.addEventListener('beforeunload', function(e) {
+                if (hasUnsavedChanges()) {
+                    saveData(false);
+                }
+            });
+        }
+        
+        // 检查是否有未保存的更改
+        function hasUnsavedChanges() {
+            // 检查表单是否有更改
+            const recorder = document.getElementById('recorder').value;
+            const expenseRows = document.querySelectorAll('#expenseBody tr');
+            const incomeRows = document.querySelectorAll('#incomeBody tr');
+            const lossRows = document.querySelectorAll('#lossBody tr');
+            
+            return recorder || expenseRows.length > 0 || incomeRows.length > 0 || lossRows.length > 0;
+        }
+        
+        // 设置自动备份
+        function setupAutoBackup() {
+            // 每天自动备份一次
+            setInterval(() => {
+                const lastBackup = localStorage.getItem('lastAutoBackup');
+                const now = new Date().toDateString();
+                
+                if (!lastBackup || lastBackup !== now) {
+                    createAutoBackup();
+                    localStorage.setItem('lastAutoBackup', now);
+                }
+            }, 24 * 60 * 60 * 1000); // 24小时
+        }
+        
+        // 更新汇率显示
+        function updateExchangeDisplay() {
+            document.getElementById('usdRate').value = exchangeRates.USD;
+            document.getElementById('ngnRate').value = exchangeRates.NGN;
+            
+            document.getElementById('usdRateDisplay').textContent = exchangeRates.USD.toFixed(3);
+            document.getElementById('ngnRateDisplay').textContent = exchangeRates.NGN.toFixed(4);
+            
+            document.getElementById('dailyUsdRate').textContent = exchangeRates.USD.toFixed(3);
+            document.getElementById('dailyNgnRate').textContent = exchangeRates.NGN.toFixed(4);
+        }
+        
+        // 更新汇率
+        function updateExchangeRates() {
+            exchangeRates.USD = parseFloat(document.getElementById('usdRate').value) || 7.20;
+            exchangeRates.NGN = parseFloat(document.getElementById('ngnRate').value) || 0.012;
+            
+            localStorage.setItem('exchangeRates', JSON.stringify(exchangeRates));
+            updateExchangeDisplay();
+            calculateSummaries();
+            
+            alert('汇率已更新！所有外币金额已重新计算。');
+        }
+        
+        // 重置汇率
+        function resetExchangeRates() {
+            if (confirm('确定要重置为默认汇率吗？')) {
+                exchangeRates = {
+                    CNY: 1.00,
+                    USD: 7.20,
+                    NGN: 0.012
+                };
+                
+                localStorage.setItem('exchangeRates', JSON.stringify(exchangeRates));
+                updateExchangeDisplay();
+                calculateSummaries();
+                alert('汇率已重置为默认值！');
+            }
+        }
+        
+        // 快速汇率换算
+        function quickConvert() {
+            const amount = parseFloat(document.getElementById('convertAmount').value) || 0;
+            const fromCurrency = document.getElementById('convertFrom').value;
+            const toCurrency = document.getElementById('convertTo').value;
+            
+            if (amount <= 0) {
+                alert('请输入有效的金额');
+                return;
+            }
+            
+            let amountInCNY = amount;
+            if (fromCurrency !== 'CNY') {
+                amountInCNY = amount * exchangeRates[fromCurrency];
+            }
+            
+            let result = amountInCNY;
+            if (toCurrency !== 'CNY') {
+                result = amountInCNY / exchangeRates[toCurrency];
+            }
+            
+            const resultElement = document.getElementById('conversionResult');
+            resultElement.innerHTML = `
+                <i class="fas fa-check-circle"></i>
+                ${amount.toFixed(2)} ${currencyNames[fromCurrency]} (${currencySymbols[fromCurrency]}${amount.toFixed(2)}) 
+                = 
+                ${result.toFixed(2)} ${currencyNames[toCurrency]} (${currencySymbols[toCurrency]}${result.toFixed(2)})
+            `;
+            resultElement.style.display = 'flex';
+        }
+        
+        // 货币转换函数
+        function convertCurrency(amount, fromCurrency, toCurrency = 'CNY') {
+            if (fromCurrency === toCurrency) return amount;
+            
+            let amountInCNY = amount;
+            if (fromCurrency !== 'CNY') {
+                amountInCNY = amount * exchangeRates[fromCurrency];
+            }
+            
+            if (toCurrency === 'CNY') {
+                return amountInCNY;
+            } else {
+                return amountInCNY / exchangeRates[toCurrency];
+            }
+        }
+        
+        // 显示汇率模态框
+        function showExchangeModal() {
+            document.getElementById('modalUsdRate').value = exchangeRates.USD.toFixed(3);
+            document.getElementById('modalNgnRate').value = exchangeRates.NGN.toFixed(4);
+            
+            document.getElementById('exchangeModal').style.display = 'flex';
+        }
+        
+        // 保存汇率模态框
+        function saveExchangeModal() {
+            exchangeRates.USD = parseFloat(document.getElementById('modalUsdRate').value) || 7.20;
+            exchangeRates.NGN = parseFloat(document.getElementById('modalNgnRate').value) || 0.012;
+            
+            localStorage.setItem('exchangeRates', JSON.stringify(exchangeRates));
+            updateExchangeDisplay();
+            calculateSummaries();
+            closeModal('exchangeModal');
+            alert('汇率设置已保存！');
+        }
+        
+        // 移动端初始化
+        function initMobile() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                document.querySelectorAll('th, td').forEach(cell => {
+                    cell.style.padding = '6px 4px';
+                });
+                
+                openMobileTab('daily');
+            }
+        }
+        
+        // 移动端打开标签页
+        function openMobileTab(tabName) {
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            
+            const menuItems = document.querySelectorAll('.mobile-menu-item');
+            menuItems.forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            document.getElementById(tabName).classList.add("active");
+            
+            const menuIndex = {
+                'daily': 0,
+                'inventory': 1,
+                'exchange': 2,
+                'weekly': 3,
+                'analytics': 4
+            };
+            
+            if (menuIndex[tabName] !== undefined) {
+                menuItems[menuIndex[tabName]].classList.add('active');
+            }
+            
+            // 如果切换到分析标签，更新分析数据
+            if (tabName === 'analytics') {
+                updateAnalytics();
+            }
+            
+            // 如果切换到数据管理标签，更新数据统计
+            if (tabName === 'backup') {
+                updateDataStats();
+            }
+        }
+        
+        // 桌面端切换标签页
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            
+            const tabs = document.getElementsByClassName("tab");
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+            
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+            
+            // 如果切换到分析标签，更新分析数据
+            if (tabName === 'analytics') {
+                updateAnalytics();
+            }
+            
+            // 如果切换到数据管理标签，更新数据统计
+            if (tabName === 'backup') {
+                updateDataStats();
+            }
+        }
+        
+        // 更新星期几
+        function updateWeekday() {
+            const dateInput = document.getElementById('reportDate').value;
+            if (dateInput) {
+                const date = new Date(dateInput);
+                const weekdayIndex = date.getDay();
+                document.getElementById('weekday').value = weekdays[weekdayIndex];
+                currentDate = dateInput;
+            }
+        }
+        
+        // 更新库存表格
+        function updateInventoryTable() {
+            const inventoryBody = document.getElementById('inventoryBody');
+            inventoryBody.innerHTML = '';
+            
+            let lowStockCount = 0;
+            let lowStockItems = [];
+            let totalInventoryValue = 0;
+            let totalSalesPotential = 0;
+            let totalProfit = 0;
+            let totalCost = 0;
+            
+            inventoryItems.forEach((item, index) => {
+                const isLowStock = item.currentStock < item.safetyStock;
+                if (isLowStock) {
+                    lowStockCount++;
+                    lowStockItems.push(item.name);
+                }
+                
+                // 计算库存价值
+                const costInCNY = convertCurrency(item.cost, item.costCurrency, 'CNY');
+                const priceInCNY = convertCurrency(item.price, item.priceCurrency, 'CNY');
+                totalInventoryValue += costInCNY * item.currentStock;
+                totalSalesPotential += priceInCNY * item.currentStock;
+                totalProfit += (priceInCNY - costInCNY) * item.currentStock;
+                totalCost += costInCNY * item.currentStock;
+                
+                const row = document.createElement('tr');
+                if (isLowStock) {
+                    row.classList.add('highlight');
+                }
+                
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${item.name}</td>
+                    <td>${currencySymbols[item.costCurrency] || ''}${item.cost.toFixed(2)}</td>
+                    <td>${item.costCurrency}</td>
+                    <td>${currencySymbols[item.priceCurrency] || ''}${item.price.toFixed(2)}</td>
+                    <td>${item.priceCurrency}</td>
+                    <td>${item.safetyStock}</td>
+                    <td>${item.currentStock}</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="deleteInventoryItem(${index})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                
+                inventoryBody.appendChild(row);
+            });
+            
+            // 更新库存统计
+            document.getElementById('totalInventoryValue').textContent = `¥${totalInventoryValue.toFixed(2)}`;
+            document.getElementById('totalSalesPotential').textContent = `¥${totalSalesPotential.toFixed(2)}`;
+            document.getElementById('avgProfitMargin').textContent = totalCost > 0 ? `${((totalProfit / totalCost) * 100).toFixed(2)}%` : '0.00%';
+            document.getElementById('lowStockCount').textContent = lowStockCount;
+            
+            // 显示库存提醒
+            const inventoryAlert = document.getElementById('inventoryAlert');
+            if (lowStockCount > 0) {
+                inventoryAlert.style.display = 'flex';
+                document.getElementById('inventoryAlertText').textContent = 
+                    `有 ${lowStockCount} 个商品库存低于安全库存：${lowStockItems.join(', ')}`;
+            } else {
+                inventoryAlert.style.display = 'none';
+            }
+            
+            // 更新库存图表
+            updateInventoryChart();
+        }
+        
+        // 删除库存商品
+        function deleteInventoryItem(index) {
+            if (confirm('确定要删除这个商品吗？')) {
+                inventoryItems.splice(index, 1);
+                updateInventoryTable();
+                saveData();
+            }
+        }
+        
+        // 添加库存商品
+        function addInventoryItem() {
+            const newId = inventoryItems.length > 0 ? Math.max(...inventoryItems.map(item => item.id)) + 1 : 1;
+            inventoryItems.push({
+                id: newId,
+                name: `商品${inventoryItems.length + 1}`,
+                cost: 0.00,
+                costCurrency: "CNY",
+                price: 0.00,
+                priceCurrency: "CNY",
+                safetyStock: 0,
+                currentStock: 0
+            });
+            
+            updateInventoryTable();
+            saveData();
+            
+            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                alert('商品添加成功！');
+            }
+        }
+        
+        // 初始化支出表格
+        function initExpenseTable() {
+            const expenseBody = document.getElementById('expenseBody');
+            expenseBody.innerHTML = '';
+            
+            // 不再添加默认支出项目
+            // 让用户自己添加
+            
+            calculateTotalExpense();
+        }
+        
+        // 添加支出行
+        function addExpenseRow(category = '日常支出', item = '', amount = 0, currency = 'CNY', note = '') {
+            const expenseBody = document.getElementById('expenseBody');
+            const row = document.createElement('tr');
+            
+            const cnyAmount = convertCurrency(amount, currency, 'CNY');
+            
+            row.innerHTML = `
+                <td>
+                    <select class="table-select expense-category" onchange="updateExpenseCategory(this)">
+                        ${expenseCategories.map(cat => 
+                            `<option value="${cat}" ${category === cat ? 'selected' : ''}>${cat}</option>`
+                        ).join('')}
+                    </select>
+                </td>
+                <td>
+                    <input type="text" class="table-input expense-item" value="${item}" onchange="calculateTotalExpense()" placeholder="支出项目">
+                </td>
+                <td>
+                    <input type="number" class="table-input expense-amount" value="${amount}" min="0" step="0.01" onchange="calculateExpenseRow(this)" placeholder="0.00">
+                </td>
+                <td>
+                    <select class="table-select expense-currency" onchange="calculateExpenseRow(this)">
+                        ${Object.keys(exchangeRates).map(curr => 
+                            `<option value="${curr}" ${currency === curr ? 'selected' : ''}>${curr} (${currencySymbols[curr]})</option>`
+                        ).join('')}
+                    </select>
+                </td>
+                <td class="expense-cny">¥${cnyAmount.toFixed(2)}</td>
+                <td>
+                    <input type="text" class="table-input expense-note" value="${note}" onchange="calculateTotalExpense()" placeholder="备注">
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="deleteRow(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            
+            expenseBody.appendChild(row);
+            calculateTotalExpense();
+        }
+        
+        // 添加多行支出
+        function addMultipleExpenseRows(count) {
+            for (let i = 0; i < count; i++) {
+                addExpenseRow();
+            }
+        }
+        
+        // 计算支出行
+        function calculateExpenseRow(input) {
+            const row = input.parentElement.parentElement;
+            const amountInput = row.querySelector('.expense-amount');
+            const currencySelect = row.querySelector('.expense-currency');
+            
+            const amount = parseFloat(amountInput.value) || 0;
+            const currency = currencySelect.value;
+            const cnyAmount = convertCurrency(amount, currency, 'CNY');
+            
+            row.querySelector('.expense-cny').textContent = `¥${cnyAmount.toFixed(2)}`;
+            calculateTotalExpense();
+        }
+        
+        // 更新支出类别
+        function updateExpenseCategory(select) {
+            const row = select.parentElement.parentElement;
+            const itemInput = row.querySelector('.expense-item');
+            
+            // 根据类别设置默认项目
+            if (!itemInput.value) {
+                switch(select.value) {
+                    case '固定支出':
+                        itemInput.value = '房租';
+                        break;
+                    case '日常支出':
+                        itemInput.value = '食材采购';
+                        break;
+                    case '采购支出':
+                        itemInput.value = '商品采购';
+                        break;
+                    case '工资支出':
+                        itemInput.value = '员工工资';
+                        break;
+                    case '营销支出':
+                        itemInput.value = '广告宣传';
+                        break;
+                    case '其他支出':
+                        itemInput.value = '其他费用';
+                        break;
+                }
+            }
+            
+            calculateTotalExpense();
+        }
+        
+        // 计算支出合计
+        function calculateTotalExpense() {
+            const rows = document.querySelectorAll('#expenseBody tr');
+            let total = 0;
+            
+            rows.forEach(row => {
+                const cnyCell = row.querySelector('.expense-cny');
+                if (cnyCell) {
+                    const value = parseFloat(cnyCell.textContent.replace('¥', '')) || 0;
+                    total += value;
+                }
+            });
+            
+            document.getElementById('totalExpense').textContent = `¥${total.toFixed(2)}`;
+            document.getElementById('dailyExpense').textContent = `¥${total.toFixed(2)}`;
+            
+            calculateNetIncome();
+            return total;
+        }
+        
+        // 初始化收入表格
+        function initIncomeTable() {
+            const incomeBody = document.getElementById('incomeBody');
+            incomeBody.innerHTML = '';
+            
+            calculateTotalIncome();
+        }
+        
+        // 添加收入行
+        function addIncomeRow(product = '', yesterdayStock = 0, purchase = 0, sold = 0, price = 0, priceCurrency = 'CNY', cost = 0, costCurrency = 'CNY', currentStock = 0) {
+            const incomeBody = document.getElementById('incomeBody');
+            const row = document.createElement('tr');
+            
+            // 如果商品已存在于库存中，使用库存数据
+            const inventoryItem = inventoryItems.find(item => item.name === product);
+            if (inventoryItem && !price) {
+                price = inventoryItem.price;
+                priceCurrency = inventoryItem.priceCurrency;
+                cost = inventoryItem.cost;
+                costCurrency = inventoryItem.costCurrency;
+                currentStock = inventoryItem.currentStock;
+            }
+            
+            // 计算销售额和差价（转换为人民币）
+            const cnyPrice = convertCurrency(price, priceCurrency, 'CNY');
+            const cnyCost = convertCurrency(cost, costCurrency, 'CNY');
+            const profit = sold * (cnyPrice - cnyCost);
+            const sales = sold * cnyPrice;
+            
+            row.innerHTML = `
+                <td>
+                    <select class="table-select income-product" onchange="updateProductInfo(this)">
+                        <option value="">选择商品</option>
+                        ${inventoryItems.map(item => `<option value="${item.name}" ${product === item.name ? 'selected' : ''}>${item.name}</option>`).join('')}
+                        <option value="其他" ${product === '其他' ? 'selected' : ''}>其他</option>
+                    </select>
+                </td>
+                <td>
+                    <input type="number" class="table-input yesterday-stock" value="${yesterdayStock}" min="0" onchange="calculateIncomeRow(this)" placeholder="0">
+                </td>
+                <td>
+                    <input type="number" class="table-input purchase-qty" value="${purchase}" min="0" onchange="calculateIncomeRow(this)" placeholder="0">
+                </td>
+                <td>
+                    <input type="number" class="table-input sold-qty" value="${sold}" min="0" onchange="calculateIncomeRow(this)" placeholder="0">
+                </td>
+                <td>
+                    <input type="number" class="table-input price" value="${price}" min="0" step="0.01" onchange="calculateIncomeRow(this)" placeholder="0.00">
+                </td>
+                <td>
+                    <select class="table-select price-currency" onchange="calculateIncomeRow(this)">
+                        ${Object.keys(exchangeRates).map(curr => 
+                            `<option value="${curr}" ${priceCurrency === curr ? 'selected' : ''}>${curr}</option>`
+                        ).join('')}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" class="table-input cost" value="${cost}" min="0" step="0.01" onchange="calculateIncomeRow(this)" placeholder="0.00">
+                </td>
+                <td class="profit">¥${profit.toFixed(2)}</td>
+                <td class="sales">¥${sales.toFixed(2)}</td>
+                <td class="today-stock">${currentStock}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="deleteRow(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            
+            incomeBody.appendChild(row);
+            
+            if (product) {
+                updateProductInfo(row.querySelector('.income-product'));
+            }
+            
+            calculateTotalIncome();
+        }
+        
+        // 添加多行收入
+        function addMultipleIncomeRows(count) {
+            for (let i = 0; i < count; i++) {
+                addIncomeRow();
+            }
+        }
+        
+        // 更新商品信息
+        function updateProductInfo(select) {
+            const row = select.parentElement.parentElement;
+            const productName = select.value;
+            
+            if (productName === '其他') {
+                // 清除其他字段，让用户手动输入
+                row.querySelector('.price').value = '';
+                row.querySelector('.cost').value = '';
+                row.querySelector('.today-stock').textContent = '0';
+                row.querySelector('.yesterday-stock').value = '0';
+                return;
+            }
+            
+            const inventoryItem = inventoryItems.find(item => item.name === productName);
+            if (inventoryItem) {
+                row.querySelector('.price').value = inventoryItem.price;
+                row.querySelector('.price-currency').value = inventoryItem.priceCurrency;
+                row.querySelector('.cost').value = inventoryItem.cost;
+                row.querySelector('.today-stock').textContent = inventoryItem.currentStock;
+                row.querySelector('.yesterday-stock').value = inventoryItem.currentStock;
+                
+                calculateIncomeRow(select);
+            }
+        }
+        
+        // 计算收入行
+        function calculateIncomeRow(input) {
+            const row = input.parentElement.parentElement;
+            
+            const soldQty = parseFloat(row.querySelector('.sold-qty').value) || 0;
+            const price = parseFloat(row.querySelector('.price').value) || 0;
+            const priceCurrency = row.querySelector('.price-currency').value;
+            const cost = parseFloat(row.querySelector('.cost').value) || 0;
+            const costCurrency = 'CNY';
+            const yesterdayStock = parseFloat(row.querySelector('.yesterday-stock').value) || 0;
+            const purchaseQty = parseFloat(row.querySelector('.purchase-qty').value) || 0;
+            
+            const cnyPrice = convertCurrency(price, priceCurrency, 'CNY');
+            const cnyCost = convertCurrency(cost, costCurrency, 'CNY');
+            
+            const profit = soldQty * (cnyPrice - cnyCost);
+            const sales = soldQty * cnyPrice;
+            const todayStock = yesterdayStock + purchaseQty - soldQty;
+            
+            row.querySelector('.profit').textContent = `¥${profit.toFixed(2)}`;
+            row.querySelector('.sales').textContent = `¥${sales.toFixed(2)}`;
+            row.querySelector('.today-stock').textContent = todayStock;
+            
+            calculateTotalIncome();
+        }
+        
+        // 计算收入合计
+        function calculateTotalIncome() {
+            const salesCells = document.querySelectorAll('.sales');
+            let total = 0;
+            
+            salesCells.forEach(cell => {
+                const value = parseFloat(cell.textContent.replace('¥', '')) || 0;
+                total += value;
+            });
+            
+            document.getElementById('totalIncome').textContent = `¥${total.toFixed(2)}`;
+            document.getElementById('dailyIncome').textContent = `¥${total.toFixed(2)}`;
+            
+            calculateNetIncome();
+            return total;
+        }
+        
+        // 初始化报损表格
+        function initLossTable() {
+            const lossBody = document.getElementById('lossBody');
+            lossBody.innerHTML = '';
+            
+            calculateTotalLoss();
+        }
+        
+        // 添加报损行
+        function addLossRow(product = '', qty = 0, reason = '损坏', lossAmount = 0, currency = 'CNY') {
+            const lossBody = document.getElementById('lossBody');
+            const row = document.createElement('tr');
+            
+            const cnyAmount = convertCurrency(lossAmount, currency, 'CNY');
+            
+            row.innerHTML = `
+                <td>
+                    <select class="table-select loss-product" onchange="calculateLossRow(this)">
+                        <option value="">选择商品</option>
+                        ${inventoryItems.map(item => `<option value="${item.name}" ${product === item.name ? 'selected' : ''}>${item.name}</option>`).join('')}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" class="table-input loss-qty" value="${qty}" min="0" onchange="calculateLossRow(this)" placeholder="0">
+                </td>
+                <td>
+                    <select class="table-select loss-reason" onchange="calculateLossRow(this)">
+                        <option value="损坏" ${reason === '损坏' ? 'selected' : ''}>损坏</option>
+                        <option value="过期" ${reason === '过期' ? 'selected' : ''}>过期</option>
+                        <option value="丢失" ${reason === '丢失' ? 'selected' : ''}>丢失</option>
+                        <option value="变质" ${reason === '变质' ? 'selected' : ''}>变质</option>
+                    </select>
+                </td>
+                <td>
+                    <input type="number" class="table-input loss-amount" value="${lossAmount}" min="0" step="0.01" onchange="calculateLossRow(this)" placeholder="0.00">
+                </td>
+                <td>
+                    <select class="table-select loss-currency" onchange="calculateLossRow(this)">
+                        ${Object.keys(exchangeRates).map(curr => 
+                            `<option value="${curr}" ${currency === curr ? 'selected' : ''}>${curr}</option>`
+                        ).join('')}
+                    </select>
+                </td>
+                <td class="loss-cny">¥${cnyAmount.toFixed(2)}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="deleteRow(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            
+            lossBody.appendChild(row);
+            calculateTotalLoss();
+        }
+        
+        // 计算报损行
+        function calculateLossRow(input) {
+            const row = input.parentElement.parentElement;
+            const amountInput = row.querySelector('.loss-amount');
+            const currencySelect = row.querySelector('.loss-currency');
+            const productSelect = row.querySelector('.loss-product');
+            const qtyInput = row.querySelector('.loss-qty');
+            
+            const amount = parseFloat(amountInput.value) || 0;
+            const currency = currencySelect.value;
+            const product = productSelect.value;
+            const qty = parseFloat(qtyInput.value) || 0;
+            
+            let cnyAmount = 0;
+            
+            if (product && qty > 0 && amount === 0) {
+                const inventoryItem = inventoryItems.find(item => item.name === product);
+                if (inventoryItem) {
+                    const costInCNY = convertCurrency(inventoryItem.cost, inventoryItem.costCurrency, 'CNY');
+                    cnyAmount = qty * costInCNY * 0.7;
+                    amountInput.value = (cnyAmount / exchangeRates[currency]).toFixed(2);
+                }
+            } else {
+                cnyAmount = convertCurrency(amount, currency, 'CNY');
+            }
+            
+            row.querySelector('.loss-cny').textContent = `¥${cnyAmount.toFixed(2)}`;
+            calculateTotalLoss();
+        }
+        
+        // 计算报损合计
+        function calculateTotalLoss() {
+            const lossAmountCells = document.querySelectorAll('.loss-cny');
+            let total = 0;
+            
+            lossAmountCells.forEach(cell => {
+                const value = parseFloat(cell.textContent.replace('¥', '')) || 0;
+                total += value;
+            });
+            
+            document.getElementById('totalLoss').textContent = `¥${total.toFixed(2)}`;
+            return total;
+        }
+        
+        // 计算净收入
+        function calculateNetIncome() {
+            const totalIncome = calculateTotalIncome();
+            const totalExpense = calculateTotalExpense();
+            const netIncome = totalIncome - totalExpense;
+            
+            document.getElementById('dailyNet').textContent = `¥${netIncome.toFixed(2)}`;
+            
+            // 计算毛利率
+            const totalCost = calculateTotalCost();
+            const grossMargin = totalIncome > 0 ? ((totalIncome - totalCost) / totalIncome * 100) : 0;
+            document.getElementById('dailyGrossMargin').textContent = `${grossMargin.toFixed(2)}%`;
+            
+            // 更新净收入状态
+            const netStatus = document.getElementById('netStatus');
+            const dailyAlert = document.getElementById('dailyAlert');
+            
+            if (netIncome > 0) {
+                netStatus.innerHTML = `<span class="positive">盈利</span>`;
+                dailyAlert.className = 'alert alert-success';
+                dailyAlert.innerHTML = `<i class="fas fa-check-circle"></i> 今日盈利 ¥${netIncome.toFixed(2)}，毛利率 ${grossMargin.toFixed(2)}%`;
+                dailyAlert.style.display = 'flex';
+            } else if (netIncome < 0) {
+                netStatus.innerHTML = `<span class="negative">亏损</span>`;
+                dailyAlert.className = 'alert alert-danger';
+                dailyAlert.innerHTML = `<i class="fas fa-exclamation-triangle"></i> 今日亏损 ¥${Math.abs(netIncome).toFixed(2)}`;
+                dailyAlert.style.display = 'flex';
+            } else {
+                netStatus.innerHTML = `平衡`;
+                dailyAlert.className = 'alert alert-warning';
+                dailyAlert.innerHTML = `<i class="fas fa-info-circle"></i> 今日收支平衡`;
+                dailyAlert.style.display = 'flex';
+            }
+            
+            return netIncome;
+        }
+        
+        // 计算总成本
+        function calculateTotalCost() {
+            const costCells = document.querySelectorAll('.cost');
+            let total = 0;
+            
+            costCells.forEach(cell => {
+                const cost = parseFloat(cell.value) || 0;
+                const row = cell.parentElement.parentElement;
+                const soldQty = parseFloat(row.querySelector('.sold-qty').value) || 0;
+                const currency = row.querySelector('.price-currency').value;
+                
+                const cnyCost = convertCurrency(cost, currency, 'CNY');
+                total += cnyCost * soldQty;
+            });
+            
+            return total;
+        }
+        
+        // 删除行
+        function deleteRow(button) {
+            const row = button.parentElement.parentElement;
+            row.parentElement.removeChild(row);
+            
+            if (row.closest('#expenseBody')) {
+                calculateTotalExpense();
+            } else if (row.closest('#incomeBody')) {
+                calculateTotalIncome();
+            } else if (row.closest('#lossBody')) {
+                calculateTotalLoss();
+            }
+        }
+        
+        // 计算所有汇总
+        function calculateSummaries() {
+            calculateTotalExpense();
+            calculateTotalIncome();
+            calculateTotalLoss();
+            calculateNetIncome();
+        }
+        
+        // 保存数据到本地存储
+        function saveData(showAlert = true) {
+            try {
+                // 数据验证
+                if (!validateData()) {
+                    return false;
+                }
+                
+                // 收集日报表数据
+                const dailyReport = {
+                    id: new Date().getTime(),
+                    date: document.getElementById('reportDate').value,
+                    weekday: document.getElementById('weekday').value,
+                    recorder: document.getElementById('recorder').value,
+                    weather: document.getElementById('weather').value,
+                    notes: document.getElementById('dailyNotes').value,
+                    exchangeRates: {...exchangeRates},
+                    expenses: collectExpenseData(),
+                    income: collectIncomeData(),
+                    losses: collectLossData(),
+                    totalIncome: parseFloat(document.getElementById('dailyIncome').textContent.replace('¥', '')) || 0,
+                    totalExpense: parseFloat(document.getElementById('dailyExpense').textContent.replace('¥', '')) || 0,
+                    netIncome: parseFloat(document.getElementById('dailyNet').textContent.replace('¥', '')) || 0,
+                    timestamp: new Date().toISOString()
+                };
+                
+                // 检查是否已存在当日记录
+                const existingIndex = dailyReports.findIndex(report => report.date === dailyReport.date);
+                if (existingIndex >= 0) {
+                    // 更新现有记录
+                    dailyReports[existingIndex] = dailyReport;
+                    console.log('更新当日记录');
+                } else {
+                    // 添加到日报表数组
+                    dailyReports.push(dailyReport);
+                    console.log('新增日报记录');
+                }
+                
+                // 保存到本地存储
+                localStorage.setItem('dailyReports', JSON.stringify(dailyReports));
+                localStorage.setItem('inventoryItems', JSON.stringify(inventoryItems));
+                localStorage.setItem('exchangeRates', JSON.stringify(exchangeRates));
+                
+                // 更新数据统计
+                updateDataStats();
+                
+                if (showAlert) {
+                    alert('数据保存成功！');
+                } else {
+                    console.log('数据自动保存成功');
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('保存数据失败:', error);
+                if (showAlert) {
+                    alert('保存数据失败：' + error.message);
+                }
+                return false;
+            }
+        }
+        
+        // 数据验证
+        function validateData() {
+            const date = document.getElementById('reportDate').value;
+            if (!date) {
+                alert('请选择日期');
+                return false;
+            }
+            
+            const recorder = document.getElementById('recorder').value;
+            if (!recorder) {
+                alert('请输入记录人');
+                return false;
+            }
+            
+            // 检查是否有数据
+            const expenseRows = document.querySelectorAll('#expenseBody tr');
+            const incomeRows = document.querySelectorAll('#incomeBody tr');
+            
+            if (expenseRows.length === 0 && incomeRows.length === 0) {
+                if (!confirm('当前没有支出和收入数据，确定要保存吗？')) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        // 收集支出数据
+        function collectExpenseData() {
+            const expenses = [];
+            const rows = document.querySelectorAll('#expenseBody tr');
+            
+            rows.forEach(row => {
+                const category = row.querySelector('.expense-category').value;
+                const item = row.querySelector('.expense-item').value;
+                const amount = parseFloat(row.querySelector('.expense-amount').value) || 0;
+                const currency = row.querySelector('.expense-currency').value;
+                const cnyAmount = parseFloat(row.querySelector('.expense-cny').textContent.replace('¥', '')) || 0;
+                const note = row.querySelector('.expense-note').value;
+                
+                if (item || amount > 0) {
+                    expenses.push({ category, item, amount, currency, cnyAmount, note });
+                }
+            });
+            
+            return expenses;
+        }
+        
+        // 收集收入数据
+        function collectIncomeData() {
+            const incomeItems = [];
+            const rows = document.querySelectorAll('#incomeBody tr');
+            
+            rows.forEach(row => {
+                const product = row.querySelector('.income-product').value;
+                if (product) {
+                    const yesterdayStock = parseFloat(row.querySelector('.yesterday-stock').value) || 0;
+                    const purchase = parseFloat(row.querySelector('.purchase-qty').value) || 0;
+                    const sold = parseFloat(row.querySelector('.sold-qty').value) || 0;
+                    const price = parseFloat(row.querySelector('.price').value) || 0;
+                    const priceCurrency = row.querySelector('.price-currency').value;
+                    const cost = parseFloat(row.querySelector('.cost').value) || 0;
+                    const profit = parseFloat(row.querySelector('.profit').textContent.replace('¥', '')) || 0;
+                    const sales = parseFloat(row.querySelector('.sales').textContent.replace('¥', '')) || 0;
+                    const todayStock = parseInt(row.querySelector('.today-stock').textContent) || 0;
+                    
+                    incomeItems.push({
+                        product, yesterdayStock, purchase, sold, price, priceCurrency, cost, profit, sales, todayStock
+                    });
+                }
+            });
+            
+            return incomeItems;
+        }
+        
+        // 收集报损数据
+        function collectLossData() {
+            const losses = [];
+            const rows = document.querySelectorAll('#lossBody tr');
+            
+            rows.forEach(row => {
+                const product = row.querySelector('.loss-product').value;
+                const qty = parseFloat(row.querySelector('.loss-qty').value) || 0;
+                const reason = row.querySelector('.loss-reason').value;
+                const amount = parseFloat(row.querySelector('.loss-amount').value) || 0;
+                const currency = row.querySelector('.loss-currency').value;
+                const cnyAmount = parseFloat(row.querySelector('.loss-cny').textContent.replace('¥', '')) || 0;
+                
+                if (product && qty > 0) {
+                    losses.push({ product, qty, reason, amount, currency, cnyAmount });
+                }
+            });
+            
+            return losses;
+        }
+        
+        // 生成周报
+        function generateWeeklyReport() {
+            const startDate = document.getElementById('weekStartDate').value;
+            const endDate = document.getElementById('weekEndDate').value;
+            
+            if (!startDate || !endDate) {
+                alert('请选择盘点周期日期范围');
+                return;
+            }
+            
+            // 过滤出指定周期内的日报表
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const weeklyReports = dailyReports.filter(report => {
+                const reportDate = new Date(report.date);
+                return reportDate >= start && reportDate <= end;
+            });
+            
+            // 计算周度数据
+            let weeklyIncome = 0;
+            let weeklyExpense = 0;
+            let weeklyLoss = 0;
+            
+            weeklyReports.forEach(report => {
+                weeklyIncome += report.totalIncome || 0;
+                weeklyExpense += report.totalExpense || 0;
+                weeklyLoss += report.losses.reduce((sum, loss) => sum + (loss.cnyAmount || 0), 0);
+            });
+            
+            const weeklyNet = weeklyIncome - weeklyExpense;
+            
+            document.getElementById('weeklyIncome').textContent = `¥${weeklyIncome.toFixed(2)}`;
+            document.getElementById('weeklyExpense').textContent = `¥${weeklyExpense.toFixed(2)}`;
+            document.getElementById('weeklyNet').textContent = `¥${weeklyNet.toFixed(2)}`;
+            document.getElementById('weeklyLoss').textContent = `¥${weeklyLoss.toFixed(2)}`;
+            
+            // 更新库存盘点对比表
+            updateWeeklyInventoryTable();
+            
+            // 更新周度趋势图表
+            updateWeeklyTrendChart(weeklyReports);
+            
+            // 切换到周盘点标签
+            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                openMobileTab('weekly');
+            } else {
+                openTab({currentTarget: document.querySelector('.tab:nth-child(4)')}, 'weekly');
+            }
+            
+            alert('周度报告已生成！');
+        }
+        
+        // 更新周度库存盘点表
+        function updateWeeklyInventoryTable() {
+            const weeklyInventoryBody = document.getElementById('weeklyInventoryBody');
+            weeklyInventoryBody.innerHTML = '';
+            
+            inventoryItems.forEach(item => {
+                const row = document.createElement('tr');
+                const bookStock = item.currentStock;
+                const actualStock = Math.max(0, bookStock + Math.floor(Math.random() * 10) - 5);
+                const difference = actualStock - bookStock;
+                const differenceRate = bookStock > 0 ? (difference / bookStock) : 0;
+                
+                let status = '正常';
+                if (differenceRate > 0.1) {
+                    status = '<span class="positive">盘盈</span>';
+                } else if (differenceRate < -0.1) {
+                    status = '<span class="negative">盘亏</span>';
+                }
+                
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${bookStock}</td>
+                    <td><input type="number" class="table-input" value="${actualStock}" style="width: 60px;"></td>
+                    <td>${difference > 0 ? '+' : ''}${difference}</td>
+                    <td>${(differenceRate * 100).toFixed(1)}%</td>
+                    <td>${status}</td>
+                `;
+                
+                weeklyInventoryBody.appendChild(row);
+            });
+        }
+        
+        // 更新周度趋势图表
+        function updateWeeklyTrendChart(weeklyReports) {
+            const ctx = document.getElementById('weeklyTrendChart').getContext('2d');
+            
+            // 按日期排序
+            weeklyReports.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            const dates = weeklyReports.map(report => report.date);
+            const incomes = weeklyReports.map(report => report.totalIncome || 0);
+            const expenses = weeklyReports.map(report => report.totalExpense || 0);
+            
+            if (charts.weeklyTrendChart) {
+                charts.weeklyTrendChart.destroy();
+            }
+            
+            charts.weeklyTrendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: '收入',
+                            data: incomes,
+                            borderColor: '#27ae60',
+                            backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: '支出',
+                            data: expenses,
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '¥' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 更新分析数据
+        function updateAnalytics() {
+            const period = parseInt(document.getElementById('analysisPeriod').value);
+            const currency = document.getElementById('analysisCurrency').value;
+            
+            // 获取最近period天的数据
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(endDate.getDate() - period);
+            
+            const recentReports = dailyReports.filter(report => {
+                const reportDate = new Date(report.date);
+                return reportDate >= startDate && reportDate <= endDate;
+            });
+            
+            if (recentReports.length === 0) {
+                // 如果没有数据，显示默认值
+                document.getElementById('avgDailyIncome').textContent = `¥0.00`;
+                document.getElementById('avgDailyExpense').textContent = `¥0.00`;
+                document.getElementById('grossMargin').textContent = `0.00%`;
+                document.getElementById('inventoryTurnover').textContent = `0.00`;
+                return;
+            }
+            
+            // 计算基本指标
+            let totalIncome = 0;
+            let totalExpense = 0;
+            let totalCost = 0;
+            
+            recentReports.forEach(report => {
+                totalIncome += report.totalIncome || 0;
+                totalExpense += report.totalExpense || 0;
+                
+                // 计算成本
+                if (report.income) {
+                    report.income.forEach(item => {
+                        const costInCNY = convertCurrency(item.cost || 0, item.priceCurrency || 'CNY', 'CNY');
+                        totalCost += costInCNY * (item.sold || 0);
+                    });
+                }
+            });
+            
+            const avgDailyIncome = totalIncome / recentReports.length;
+            const avgDailyExpense = totalExpense / recentReports.length;
+            const grossMargin = totalIncome > 0 ? ((totalIncome - totalCost) / totalIncome * 100) : 0;
+            
+            // 计算库存周转率
+            const avgInventory = calculateAverageInventory();
+            const cogs = totalCost; // 销售成本
+            const inventoryTurnover = avgInventory > 0 ? (cogs / avgInventory) : 0;
+            
+            // 转换为目标货币
+            const symbol = currencySymbols[currency];
+            const convertedAvgDailyIncome = convertCurrency(avgDailyIncome, 'CNY', currency);
+            const convertedAvgDailyExpense = convertCurrency(avgDailyExpense, 'CNY', currency);
+            
+            document.getElementById('avgDailyIncome').textContent = `${symbol}${convertedAvgDailyIncome.toFixed(2)}`;
+            document.getElementById('avgDailyExpense').textContent = `${symbol}${convertedAvgDailyExpense.toFixed(2)}`;
+            document.getElementById('grossMargin').textContent = `${grossMargin.toFixed(2)}%`;
+            document.getElementById('inventoryTurnover').textContent = inventoryTurnover.toFixed(2);
+            
+            // 计算趋势变化
+            calculateTrendChanges(recentReports, period, currency);
+            
+            // 更新图表
+            updateAnalyticsCharts(recentReports, currency);
+        }
+        
+        // 计算平均库存
+        function calculateAverageInventory() {
+            if (inventoryItems.length === 0) return 0;
+            
+            let totalValue = 0;
+            inventoryItems.forEach(item => {
+                const costInCNY = convertCurrency(item.cost, item.costCurrency, 'CNY');
+                totalValue += costInCNY * item.currentStock;
+            });
+            
+            return totalValue / inventoryItems.length;
+        }
+        
+        // 计算趋势变化
+        function calculateTrendChanges(recentReports, period, currency) {
+            if (recentReports.length < 2) return;
+            
+            // 分为前后两段进行比较
+            const midIndex = Math.floor(recentReports.length / 2);
+            const firstHalf = recentReports.slice(0, midIndex);
+            const secondHalf = recentReports.slice(midIndex);
+            
+            // 计算前半段平均值
+            let firstHalfIncome = 0;
+            let firstHalfExpense = 0;
+            
+            firstHalf.forEach(report => {
+                firstHalfIncome += report.totalIncome || 0;
+                firstHalfExpense += report.totalExpense || 0;
+            });
+            
+            const avgFirstHalfIncome = firstHalfIncome / firstHalf.length;
+            const avgFirstHalfExpense = firstHalfExpense / firstHalf.length;
+            
+            // 计算后半段平均值
+            let secondHalfIncome = 0;
+            let secondHalfExpense = 0;
+            
+            secondHalf.forEach(report => {
+                secondHalfIncome += report.totalIncome || 0;
+                secondHalfExpense += report.totalExpense || 0;
+            });
+            
+            const avgSecondHalfIncome = secondHalfIncome / secondHalf.length;
+            const avgSecondHalfExpense = secondHalfExpense / secondHalf.length;
+            
+            // 计算变化率
+            const incomeChange = avgFirstHalfIncome > 0 ? 
+                ((avgSecondHalfIncome - avgFirstHalfIncome) / avgFirstHalfIncome * 100) : 0;
+            const expenseChange = avgFirstHalfExpense > 0 ? 
+                ((avgSecondHalfExpense - avgFirstHalfExpense) / avgFirstHalfExpense * 100) : 0;
+            
+            // 更新显示
+            updateChangeIndicator('avgDailyIncomeChange', incomeChange);
+            updateChangeIndicator('avgDailyExpenseChange', expenseChange);
+        }
+        
+        // 更新变化指示器
+        function updateChangeIndicator(elementId, change) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            if (change > 0) {
+                element.innerHTML = `<span class="positive">↑ ${change.toFixed(1)}%</span>`;
+            } else if (change < 0) {
+                element.innerHTML = `<span class="negative">↓ ${Math.abs(change).toFixed(1)}%</span>`;
+            } else {
+                element.innerHTML = `<span>→ 0.0%</span>`;
+            }
+        }
+        
+        // 更新分析图表
+        function updateAnalyticsCharts(recentReports, currency) {
+            // 收入支出趋势图
+            updateIncomeExpenseChart(recentReports, currency);
+            
+            // 支出类别分析图
+            updateExpenseCategoryChart(recentReports);
+            
+            // 月度对比图
+            updateMonthlyComparisonChart(currency);
+        }
+        
+        // 更新收入支出趋势图
+        function updateIncomeExpenseChart(recentReports, currency) {
+            const ctx = document.getElementById('incomeExpenseChart').getContext('2d');
+            
+            // 按日期排序
+            recentReports.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            const dates = recentReports.map(report => report.date);
+            const incomes = recentReports.map(report => convertCurrency(report.totalIncome || 0, 'CNY', currency));
+            const expenses = recentReports.map(report => convertCurrency(report.totalExpense || 0, 'CNY', currency));
+            const symbol = currencySymbols[currency];
+            
+            if (charts.incomeExpenseChart) {
+                charts.incomeExpenseChart.destroy();
+            }
+            
+            charts.incomeExpenseChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: '收入',
+                            data: incomes,
+                            borderColor: '#27ae60',
+                            backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: '支出',
+                            data: expenses,
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return symbol + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 更新支出类别分析图
+        function updateExpenseCategoryChart(recentReports) {
+            const ctx = document.getElementById('expenseCategoryChart').getContext('2d');
+            
+            // 统计支出类别
+            const categoryTotals = {};
+            expenseCategories.forEach(category => {
+                categoryTotals[category] = 0;
+            });
+            
+            recentReports.forEach(report => {
+                if (report.expenses) {
+                    report.expenses.forEach(expense => {
+                        if (expense.category && categoryTotals[expense.category] !== undefined) {
+                            categoryTotals[expense.category] += expense.cnyAmount || 0;
+                        } else {
+                            categoryTotals['其他支出'] += expense.cnyAmount || 0;
+                        }
+                    });
+                }
+            });
+            
+            // 过滤掉值为0的类别
+            const labels = [];
+            const data = [];
+            const colors = [
+                '#3498db', '#e74c3c', '#2ecc71', '#f39c12', 
+                '#9b59b6', '#1abc9c', '#34495e', '#e67e22'
+            ];
+            const backgroundColors = [];
+            
+            Object.keys(categoryTotals).forEach((category, index) => {
+                if (categoryTotals[category] > 0) {
+                    labels.push(category);
+                    data.push(categoryTotals[category]);
+                    backgroundColors.push(colors[index % colors.length]);
+                }
+            });
+            
+            if (charts.expenseCategoryChart) {
+                charts.expenseCategoryChart.destroy();
+            }
+            
+            charts.expenseCategoryChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ¥' + context.raw.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 更新月度对比图
+        function updateMonthlyComparisonChart(currency) {
+            const ctx = document.getElementById('monthlyComparisonChart').getContext('2d');
+            
+            // 获取最近3个月的数据
+            const now = new Date();
+            const months = [];
+            const monthlyIncome = [];
+            const monthlyExpense = [];
+            
+            for (let i = 2; i >= 0; i--) {
+                const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+                const monthName = monthStart.toLocaleDateString('zh-CN', { month: 'long' });
+                
+                months.push(monthName);
+                
+                // 计算该月的收入支出
+                let monthIncome = 0;
+                let monthExpense = 0;
+                
+                dailyReports.forEach(report => {
+                    const reportDate = new Date(report.date);
+                    if (reportDate >= monthStart && reportDate <= monthEnd) {
+                        monthIncome += report.totalIncome || 0;
+                        monthExpense += report.totalExpense || 0;
+                    }
+                });
+                
+                monthlyIncome.push(convertCurrency(monthIncome, 'CNY', currency));
+                monthlyExpense.push(convertCurrency(monthExpense, 'CNY', currency));
+            }
+            
+            const symbol = currencySymbols[currency];
+            
+            if (charts.monthlyComparisonChart) {
+                charts.monthlyComparisonChart.destroy();
+            }
+            
+            charts.monthlyComparisonChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: '收入',
+                            data: monthlyIncome,
+                            backgroundColor: 'rgba(39, 174, 96, 0.7)',
+                            borderColor: '#27ae60',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '支出',
+                            data: monthlyExpense,
+                            backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                            borderColor: '#e74c3c',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return symbol + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 更新库存图表
+        function updateInventoryChart() {
+            const ctx = document.getElementById('inventoryChart').getContext('2d');
+            
+            if (inventoryItems.length === 0) {
+                if (charts.inventoryChart) {
+                    charts.inventoryChart.destroy();
+                }
+                return;
+            }
+            
+            // 准备数据
+            const labels = inventoryItems.map(item => item.name);
+            const data = inventoryItems.map(item => {
+                const costInCNY = convertCurrency(item.cost, item.costCurrency, 'CNY');
+                return costInCNY * item.currentStock;
+            });
+            
+            // 生成颜色
+            const backgroundColors = [];
+            for (let i = 0; i < inventoryItems.length; i++) {
+                const hue = (i * 137.508) % 360; // 使用黄金角度分布颜色
+                backgroundColors.push(`hsl(${hue}, 70%, 60%)`);
+            }
+            
+            if (charts.inventoryChart) {
+                charts.inventoryChart.destroy();
+            }
+            
+            charts.inventoryChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '库存价值 (CNY)',
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '¥' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 刷新分析数据
+        function refreshAnalytics() {
+            updateAnalytics();
+            alert('分析数据已刷新！');
+        }
+        
+        // 显示导出模态框
+        function showExportModal() {
+            document.getElementById('exportModal').style.display = 'flex';
+        }
+        
+        // 关闭模态框
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        // 执行导出
+        function performExport() {
+            try {
+                // 创建工作簿
+                const wb = XLSX.utils.book_new();
+                
+                // 获取导出货币
+                const exportCurrency = document.getElementById('exportCurrency').value;
+                
+                // 导出日报表
+                if (document.getElementById('includeDaily').checked) {
+                    const dailyData = prepareDailyData(exportCurrency);
+                    const ws = XLSX.utils.aoa_to_sheet(dailyData);
+                    XLSX.utils.book_append_sheet(wb, ws, "日报表");
+                }
+                
+                // 导出库存表
+                if (document.getElementById('includeInventory').checked) {
+                    const inventoryData = prepareInventoryData(exportCurrency);
+                    const ws = XLSX.utils.aoa_to_sheet(inventoryData);
+                    XLSX.utils.book_append_sheet(wb, ws, "库存表");
+                }
+                
+                // 导出周盘点表
+                if (document.getElementById('includeWeekly').checked) {
+                    const weeklyData = prepareWeeklyData(exportCurrency);
+                    const ws = XLSX.utils.aoa_to_sheet(weeklyData);
+                    XLSX.utils.book_append_sheet(wb, ws, "周盘点");
+                }
+                
+                // 导出汇率记录
+                if (document.getElementById('includeExchange').checked) {
+                    const exchangeData = prepareExchangeData();
+                    const ws = XLSX.utils.aoa_to_sheet(exchangeData);
+                    XLSX.utils.book_append_sheet(wb, ws, "汇率记录");
+                }
+                
+                // 导出分析报告
+                if (document.getElementById('includeAnalytics').checked) {
+                    const analyticsData = prepareAnalyticsData(exportCurrency);
+                    const ws = XLSX.utils.aoa_to_sheet(analyticsData);
+                    XLSX.utils.book_append_sheet(wb, ws, "分析报告");
+                }
+                
+                // 生成文件名
+                const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+                const fileName = `经营报表_${dateStr}_${exportCurrency}.xlsx`;
+                
+                // 导出文件
+                XLSX.writeFile(wb, fileName);
+                
+                // 关闭模态框
+                closeModal('exportModal');
+                
+                alert('Excel文件已开始下载！');
+            } catch (error) {
+                console.error('导出失败:', error);
+                alert('导出失败：' + error.message);
+            }
+        }
+        
+        // 准备日报表数据
+        function prepareDailyData(targetCurrency = 'CNY') {
+            const data = [];
+            
+            // 基本信息
+            data.push(["每日经营与财务日报表"]);
+            data.push(["日期:", document.getElementById('reportDate').value]);
+            data.push(["星期:", document.getElementById('weekday').value]);
+            data.push(["记录人:", document.getElementById('recorder').value]);
+            data.push(["天气:", document.getElementById('weather').value]);
+            data.push(["备注:", document.getElementById('dailyNotes').value]);
+            data.push(["汇率基准:", "人民币(CNY)", `导出货币: ${targetCurrency}`]);
+            data.push([]);
+            
+            // 当前汇率
+            data.push(["当前汇率"]);
+            data.push(["货币", "汇率(对CNY)"]);
+            for (const currency in exchangeRates) {
+                if (currency !== 'CNY') {
+                    data.push([`1 ${currency}`, `= ${exchangeRates[currency].toFixed(4)} CNY`]);
+                }
+            }
+            data.push([]);
+            
+            // 支出明细
+            data.push(["一、每日支出明细"]);
+            data.push(["类别", "项目", "金额", "货币", `金额(${targetCurrency})`, "备注"]);
+            
+            const expenseRows = document.querySelectorAll('#expenseBody tr');
+            expenseRows.forEach(row => {
+                const category = row.querySelector('.expense-category').value;
+                const item = row.querySelector('.expense-item').value;
+                const amount = parseFloat(row.querySelector('.expense-amount').value) || 0;
+                const currency = row.querySelector('.expense-currency').value;
+                const cnyAmount = parseFloat(row.querySelector('.expense-cny').textContent.replace('¥', '')) || 0;
+                const targetAmount = convertCurrency(cnyAmount, 'CNY', targetCurrency);
+                const note = row.querySelector('.expense-note').value;
+                
+                if (item || amount > 0) {
+                    data.push([category, item, amount, currency, targetAmount.toFixed(2), note]);
+                }
+            });
+            
+            const totalExpense = parseFloat(document.getElementById('totalExpense').textContent.replace('¥', '')) || 0;
+            const totalExpenseTarget = convertCurrency(totalExpense, 'CNY', targetCurrency);
+            data.push(["当日支出合计", "", "", "", totalExpenseTarget.toFixed(2)]);
+            data.push([]);
+            
+            // 收入明细
+            data.push(["二、每日收入明细"]);
+            data.push(["品类", "昨日余量", "进货量", "卖出数量", "单价", "货币", "成本", `差价(${targetCurrency})`, `销售额(${targetCurrency})`, "今日余量"]);
+            
+            const incomeRows = document.querySelectorAll('#incomeBody tr');
+            incomeRows.forEach(row => {
+                const product = row.querySelector('.income-product').value;
+                if (product) {
+                    const yesterdayStock = parseFloat(row.querySelector('.yesterday-stock').value) || 0;
+                    const purchase = parseFloat(row.querySelector('.purchase-qty').value) || 0;
+                    const sold = parseFloat(row.querySelector('.sold-qty').value) || 0;
+                    const price = parseFloat(row.querySelector('.price').value) || 0;
+                    const priceCurrency = row.querySelector('.price-currency').value;
+                    const cost = parseFloat(row.querySelector('.cost').value) || 0;
+                    const profit = parseFloat(row.querySelector('.profit').textContent.replace('¥', '')) || 0;
+                    const sales = parseFloat(row.querySelector('.sales').textContent.replace('¥', '')) || 0;
+                    const todayStock = row.querySelector('.today-stock').textContent;
+                    
+                    const profitTarget = convertCurrency(profit, 'CNY', targetCurrency);
+                    const salesTarget = convertCurrency(sales, 'CNY', targetCurrency);
+                    
+                    data.push([product, yesterdayStock, purchase, sold, price, priceCurrency, cost, profitTarget.toFixed(2), salesTarget.toFixed(2), todayStock]);
+                }
+            });
+            
+            const totalIncome = parseFloat(document.getElementById('totalIncome').textContent.replace('¥', '')) || 0;
+            const totalIncomeTarget = convertCurrency(totalIncome, 'CNY', targetCurrency);
+            data.push(["当日收入合计", "", "", "", "", "", "", "", totalIncomeTarget.toFixed(2)]);
+            data.push([]);
+            
+            // 报损明细
+            data.push(["三、每日报损明细"]);
+            data.push(["品类", "报损数量", "原因", "损失金额", "货币", `损失金额(${targetCurrency})`]);
+            
+            const lossRows = document.querySelectorAll('#lossBody tr');
+            lossRows.forEach(row => {
+                const product = row.querySelector('.loss-product').value;
+                if (product) {
+                    const qty = parseFloat(row.querySelector('.loss-qty').value) || 0;
+                    const reason = row.querySelector('.loss-reason').value;
+                    const amount = parseFloat(row.querySelector('.loss-amount').value) || 0;
+                    const currency = row.querySelector('.loss-currency').value;
+                    const cnyAmount = parseFloat(row.querySelector('.loss-cny').textContent.replace('¥', '')) || 0;
+                    const targetAmount = convertCurrency(cnyAmount, 'CNY', targetCurrency);
+                    
+                    if (qty > 0) {
+                        data.push([product, qty, reason, amount, currency, targetAmount.toFixed(2)]);
+                    }
+                }
+            });
+            
+            const totalLoss = parseFloat(document.getElementById('totalLoss').textContent.replace('¥', '')) || 0;
+            const totalLossTarget = convertCurrency(totalLoss, 'CNY', targetCurrency);
+            data.push(["当日报损合计", "", "", "", "", totalLossTarget.toFixed(2)]);
+            data.push([]);
+            
+            // 本日结余
+            data.push(["四、本日结余"]);
+            data.push([`总收入(${targetCurrency}):`, convertCurrency(parseFloat(document.getElementById('dailyIncome').textContent.replace('¥', '')), 'CNY', targetCurrency).toFixed(2)]);
+            data.push([`总支出(${targetCurrency}):`, convertCurrency(parseFloat(document.getElementById('dailyExpense').textContent.replace('¥', '')), 'CNY', targetCurrency).toFixed(2)]);
+            data.push([`净收入(${targetCurrency}):`, convertCurrency(parseFloat(document.getElementById('dailyNet').textContent.replace('¥', '')), 'CNY', targetCurrency).toFixed(2)]);
+            data.push([`毛利率:`, document.getElementById('dailyGrossMargin').textContent]);
+            
+            return data;
+        }
+        
+        // 准备库存数据
+        function prepareInventoryData(targetCurrency = 'CNY') {
+            const data = [];
+            
+            data.push(["库存基础数据表"]);
+            data.push(["序号", "品类名称", "单位成本", "货币", `成本(${targetCurrency})`, "建议售价", "货币", `售价(${targetCurrency})`, "安全库存", "当前库存", `库存价值(${targetCurrency})`]);
+            
+            inventoryItems.forEach((item, index) => {
+                const costTarget = convertCurrency(item.cost, item.costCurrency, targetCurrency);
+                const priceTarget = convertCurrency(item.price, item.priceCurrency, targetCurrency);
+                const inventoryValue = costTarget * item.currentStock;
+                
+                data.push([index + 1, item.name, item.cost, item.costCurrency, costTarget.toFixed(2), item.price, item.priceCurrency, priceTarget.toFixed(2), item.safetyStock, item.currentStock, inventoryValue.toFixed(2)]);
+            });
+            
+            // 统计信息
+            data.push([]);
+            data.push(["库存统计信息"]);
+            data.push(["总库存价值:", convertCurrency(parseFloat(document.getElementById('totalInventoryValue').textContent.replace('¥', '')) || 0, 'CNY', targetCurrency).toFixed(2)]);
+            data.push(["总销售额潜力:", convertCurrency(parseFloat(document.getElementById('totalSalesPotential').textContent.replace('¥', '')) || 0, 'CNY', targetCurrency).toFixed(2)]);
+            data.push(["平均利润率:", document.getElementById('avgProfitMargin').textContent]);
+            data.push(["低库存商品数量:", document.getElementById('lowStockCount').textContent]);
+            
+            return data;
+        }
+        
+        // 准备周盘点数据
+        function prepareWeeklyData(targetCurrency = 'CNY') {
+            const data = [];
+            
+            data.push(["周盘点汇总表"]);
+            data.push(["盘点周期:", document.getElementById('weekStartDate').value, "至", document.getElementById('weekEndDate').value]);
+            data.push(["汇率基准:", "人民币(CNY)", `导出货币: ${targetCurrency}`]);
+            data.push([]);
+            
+            data.push(["周度经营指标"]);
+            data.push(["项目", `金额(${targetCurrency})`]);
+            
+            const weeklyIncome = parseFloat(document.getElementById('weeklyIncome').textContent.replace('¥', '')) || 0;
+            const weeklyExpense = parseFloat(document.getElementById('weeklyExpense').textContent.replace('¥', '')) || 0;
+            const weeklyNet = parseFloat(document.getElementById('weeklyNet').textContent.replace('¥', '')) || 0;
+            const weeklyLoss = parseFloat(document.getElementById('weeklyLoss').textContent.replace('¥', '')) || 0;
+            
+            data.push([`周总收入`, convertCurrency(weeklyIncome, 'CNY', targetCurrency).toFixed(2)]);
+            data.push([`周总支出`, convertCurrency(weeklyExpense, 'CNY', targetCurrency).toFixed(2)]);
+            data.push([`周净收入`, convertCurrency(weeklyNet, 'CNY', targetCurrency).toFixed(2)]);
+            data.push([`周报损总额`, convertCurrency(weeklyLoss, 'CNY', targetCurrency).toFixed(2)]);
+            data.push([]);
+            
+            data.push(["库存盘点对比"]);
+            data.push(["品类", "账面数量", "实际盘点", "差异", "差异率", "状态"]);
+            
+            const weeklyRows = document.querySelectorAll('#weeklyInventoryBody tr');
+            weeklyRows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 6) {
+                    const product = cells[0].textContent;
+                    const bookStock = cells[1].textContent;
+                    const actualStock = cells[2].querySelector('input').value;
+                    const difference = cells[3].textContent;
+                    const differenceRate = cells[4].textContent;
+                    const status = cells[5].textContent;
+                    
+                    data.push([product, bookStock, actualStock, difference, differenceRate, status]);
+                }
+            });
+            
+            return data;
+        }
+        
+        // 准备汇率数据
+        function prepareExchangeData() {
+            const data = [];
+            
+            data.push(["汇率记录表"]);
+            data.push(["记录时间:", new Date().toLocaleString()]);
+            data.push([]);
+            
+            data.push(["汇率设置"]);
+            data.push(["货币", "汇率(对CNY)", "说明"]);
+            
+            for (const currency in exchangeRates) {
+                if (currency !== 'CNY') {
+                    const rate = exchangeRates[currency];
+                    const description = `1${currency} = CNY`;
+                    data.push([currency, rate.toFixed(4), description]);
+                }
+            }
+            
+            data.push(["人民币(CNY)", "1.0000", "基准货币"]);
+            
+            return data;
+        }
+        
+        // 准备分析数据
+        function prepareAnalyticsData(targetCurrency = 'CNY') {
+            const data = [];
+            
+            data.push(["经营分析报告"]);
+            data.push(["分析时间:", new Date().toLocaleString()]);
+            data.push(["分析周期:", document.getElementById('analysisPeriod').value + "天"]);
+            data.push(["分析货币:", targetCurrency]);
+            data.push([]);
+            
+            // 关键指标
+            data.push(["关键经营指标"]);
+            data.push(["指标", "数值", "说明"]);
+            
+            data.push(["平均日收入", document.getElementById('avgDailyIncome').textContent, "分析周期内平均每日收入"]);
+            data.push(["平均日支出", document.getElementById('avgDailyExpense').textContent, "分析周期内平均每日支出"]);
+            data.push(["毛利率", document.getElementById('grossMargin').textContent, "毛利占收入的比例"]);
+            data.push(["库存周转率", document.getElementById('inventoryTurnover').textContent, "库存周转效率"]);
+            data.push([]);
+            
+            // 收入趋势
+            data.push(["收入趋势分析"]);
+            data.push(["日期", `收入(${targetCurrency})`, `支出(${targetCurrency})`, `净收入(${targetCurrency})`]);
+            
+            const period = parseInt(document.getElementById('analysisPeriod').value);
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(endDate.getDate() - period);
+            
+            const recentReports = dailyReports.filter(report => {
+                const reportDate = new Date(report.date);
+                return reportDate >= startDate && reportDate <= endDate;
+            }).sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            recentReports.forEach(report => {
+                const income = convertCurrency(report.totalIncome || 0, 'CNY', targetCurrency);
+                const expense = convertCurrency(report.totalExpense || 0, 'CNY', targetCurrency);
+                const net = income - expense;
+                
+                data.push([report.date, income.toFixed(2), expense.toFixed(2), net.toFixed(2)]);
+            });
+            
+            return data;
+        }
+        
+        // 重置表单
+        function resetForm() {
+            if (confirm("确定要重置当前表单数据吗？已保存的数据不会被删除。")) {
+                const today = new Date();
+                const todayStr = today.toISOString().split('T')[0];
+                document.getElementById('reportDate').value = todayStr;
+                document.getElementById('recorder').value = '';
+                document.getElementById('weather').value = '';
+                document.getElementById('dailyNotes').value = '';
+                updateWeekday();
+                
+                initExpenseTable();
+                initIncomeTable();
+                initLossTable();
+                
+                calculateSummaries();
+                
+                alert("表单已重置！");
+            }
+        }
+        
+        // 数据备份与恢复功能
+        
+        // 更新数据统计
+        function updateDataStats() {
+            document.getElementById('dailyRecordsCount').textContent = dailyReports.length;
+            document.getElementById('inventoryItemsCount').textContent = inventoryItems.length;
+            
+            // 计算数据大小
+            const dataStr = JSON.stringify({ dailyReports, inventoryItems, exchangeRates });
+            const dataSize = new Blob([dataStr]).size;
+            document.getElementById('dataSize').textContent = (dataSize / 1024).toFixed(2) + ' KB';
+            
+            // 更新最后备份时间
+            const lastBackup = localStorage.getItem('lastBackupTime');
+            if (lastBackup) {
+                document.getElementById('lastBackupDate').textContent = new Date(lastBackup).toLocaleString();
+            }
+        }
+        
+        // 显示备份模态框
+        function showBackupModal() {
+            updateBackupList();
+            document.getElementById('backupModal').style.display = 'flex';
+        }
+        
+        // 更新备份列表
+        function updateBackupList() {
+            const backupList = document.getElementById('backupList');
+            backupList.innerHTML = '';
+            
+            if (autoBackups.length === 0) {
+                backupList.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">暂无备份</div>';
+                return;
+            }
+            
+            autoBackups.forEach((backup, index) => {
+                const backupItem = document.createElement('div');
+                backupItem.className = 'backup-item';
+                backupItem.style.padding = '10px';
+                backupItem.style.borderBottom = '1px solid #eee';
+                backupItem.style.cursor = 'pointer';
+                backupItem.style.display = 'flex';
+                backupItem.style.justifyContent = 'space-between';
+                backupItem.style.alignItems = 'center';
+                
+                backupItem.innerHTML = `
+                    <div>
+                        <div style="font-weight: 600;">备份 ${index + 1}</div>
+                        <div style="font-size: 0.8rem; color: #666;">${new Date(backup.timestamp).toLocaleString()}</div>
+                    </div>
+                    <div style="font-size: 0.8rem; color: #666;">
+                        ${backup.dailyReports.length}条日报<br>
+                        ${backup.inventoryItems.length}个商品
+                    </div>
+                `;
+                
+                backupItem.onclick = function() {
+                    // 选中备份
+                    document.querySelectorAll('.backup-item').forEach(item => {
+                        item.style.backgroundColor = '';
+                    });
+                    this.style.backgroundColor = '#f0f7ff';
+                    this.dataset.index = index;
+                };
+                
+                backupList.appendChild(backupItem);
+            });
+        }
+        
+        // 导出备份
+        function exportBackup() {
+            const backupData = {
+                dailyReports,
+                inventoryItems,
+                exchangeRates,
+                timestamp: new Date().toISOString(),
+                version: '3.0'
+            };
+            
+            const dataStr = JSON.stringify(backupData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `经营数据备份_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('备份文件已导出！');
+        }
+        
+        // 创建自动备份
+        function createAutoBackup() {
+            const backupData = {
+                dailyReports,
+                inventoryItems,
+                exchangeRates,
+                timestamp: new Date().toISOString(),
+                version: '3.0'
+            };
+            
+            autoBackups.push(backupData);
+            
+            // 只保留最近10个备份
+            if (autoBackups.length > 10) {
+                autoBackups.shift();
+            }
+            
+            localStorage.setItem('autoBackups', JSON.stringify(autoBackups));
+            localStorage.setItem('lastBackupTime', new Date().toISOString());
+            
+            updateDataStats();
+            console.log('自动备份已创建');
+        }
+        
+        // 创建手动备份
+        function createManualBackup() {
+            createAutoBackup();
+            updateBackupList();
+            alert('手动备份已创建！');
+        }
+        
+        // 恢复选中备份
+        function restoreSelectedBackup() {
+            const selected = document.querySelector('.backup-item[style*="background-color: rgb(240, 247, 255)"]');
+            if (!selected) {
+                alert('请先选择一个备份');
+                return;
+            }
+            
+            const index = parseInt(selected.dataset.index);
+            if (confirm('确定要恢复此备份吗？当前数据将被覆盖。')) {
+                const backup = autoBackups[index];
+                
+                dailyReports = backup.dailyReports;
+                inventoryItems = backup.inventoryItems;
+                exchangeRates = backup.exchangeRates;
+                
+                localStorage.setItem('dailyReports', JSON.stringify(dailyReports));
+                localStorage.setItem('inventoryItems', JSON.stringify(inventoryItems));
+                localStorage.setItem('exchangeRates', JSON.stringify(exchangeRates));
+                
+                updateInventoryTable();
+                updateExchangeDisplay();
+                updateDataStats();
+                
+                alert('备份恢复成功！');
+                closeModal('backupModal');
+            }
+        }
+        
+        // 处理恢复文件
+        function handleRestoreFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // 验证数据格式
+                    if (!data.dailyReports || !data.inventoryItems || !data.exchangeRates) {
+                        throw new Error('文件格式不正确');
+                    }
+                    
+                    if (confirm('确定要恢复此备份吗？当前数据将被覆盖。')) {
+                        dailyReports = data.dailyReports;
+                        inventoryItems = data.inventoryItems;
+                        exchangeRates = data.exchangeRates;
+                        
+                        localStorage.setItem('dailyReports', JSON.stringify(dailyReports));
+                        localStorage.setItem('inventoryItems', JSON.stringify(inventoryItems));
+                        localStorage.setItem('exchangeRates', JSON.stringify(exchangeRates));
+                        
+                        updateInventoryTable();
+                        updateExchangeDisplay();
+                        updateDataStats();
+                        
+                        document.getElementById('restoreResult').className = 'alert alert-success';
+                        document.getElementById('restoreResult').innerHTML = `<i class="fas fa-check-circle"></i> 备份恢复成功！`;
+                        document.getElementById('restoreResult').style.display = 'flex';
+                    }
+                } catch (error) {
+                    document.getElementById('restoreResult').className = 'alert alert-danger';
+                    document.getElementById('restoreResult').innerHTML = `<i class="fas fa-exclamation-circle"></i> 恢复失败：${error.message}`;
+                    document.getElementById('restoreResult').style.display = 'flex';
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        // 显示导入模态框
+        function showImportModal() {
+            document.getElementById('importModal').style.display = 'flex';
+        }
+        
+        // 执行导入
+        function performImport() {
+            const fileInput = document.getElementById('importFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('请选择要导入的文件');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // 解析Excel数据
+                    const importType = document.getElementById('importType').value;
+                    const importOverwrite = document.getElementById('importOverwrite').checked;
+                    
+                    let importCount = 0;
+                    
+                    if (importType === 'daily' || importType === 'both') {
+                        // 导入日报表数据
+                        const dailySheet = workbook.Sheets['日报表'];
+                        if (dailySheet) {
+                            const dailyData = XLSX.utils.sheet_to_json(dailySheet, { header: 1 });
+                            importCount += importDailyData(dailyData, importOverwrite);
+                        }
+                    }
+                    
+                    if (importType === 'inventory' || importType === 'both') {
+                        // 导入库存数据
+                        const inventorySheet = workbook.Sheets['库存表'];
+                        if (inventorySheet) {
+                            const inventoryData = XLSX.utils.sheet_to_json(inventorySheet, { header: 1 });
+                            importCount += importInventoryData(inventoryData, importOverwrite);
+                        }
+                    }
+                    
+                    // 保存数据
+                    saveData();
+                    
+                    alert(`导入成功！共导入${importCount}条数据。`);
+                    closeModal('importModal');
+                    
+                } catch (error) {
+                    alert('导入失败：' + error.message);
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // 导入日报表数据
+        function importDailyData(data, overwrite) {
+            // 跳过表头，从第9行开始（根据Excel结构）
+            let importCount = 0;
+            
+            for (let i = 8; i < data.length; i++) {
+                const row = data[i];
+                if (row.length < 5) continue;
+                
+                // 解析数据行
+                // 这里需要根据实际的Excel结构来解析
+                // 示例：假设第一列是日期，第二列是收入，第三列是支出
+                const date = row[0];
+                const income = parseFloat(row[1]) || 0;
+                const expense = parseFloat(row[2]) || 0;
+                
+                if (date && (income > 0 || expense > 0)) {
+                    // 创建日报记录
+                    const report = {
+                        id: new Date().getTime() + i,
+                        date: date,
+                        weekday: getWeekday(date),
+                        recorder: '系统导入',
+                        exchangeRates: {...exchangeRates},
+                        expenses: [],
+                        income: [],
+                        losses: [],
+                        totalIncome: income,
+                        totalExpense: expense,
+                        netIncome: income - expense,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    // 检查是否已存在相同日期的记录
+                    const existingIndex = dailyReports.findIndex(r => r.date === date);
+                    if (existingIndex >= 0 && overwrite) {
+                        dailyReports[existingIndex] = report;
+                    } else if (existingIndex < 0) {
+                        dailyReports.push(report);
+                    }
+                    
+                    importCount++;
+                }
+            }
+            
+            return importCount;
+        }
+        
+        // 导入库存数据
+        function importInventoryData(data, overwrite) {
+            // 跳过表头，从第2行开始
+            let importCount = 0;
+            
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (row.length < 9) continue;
+                
+                // 解析数据行
+                const name = row[1] || `商品${i}`;
+                const cost = parseFloat(row[2]) || 0;
+                const costCurrency = row[3] || 'CNY';
+                const price = parseFloat(row[4]) || 0;
+                const priceCurrency = row[5] || 'CNY';
+                const safetyStock = parseInt(row[6]) || 0;
+                const currentStock = parseInt(row[7]) || 0;
+                
+                if (name) {
+                    const item = {
+                        id: inventoryItems.length + 1,
+                        name: name,
+                        cost: cost,
+                        costCurrency: costCurrency,
+                        price: price,
+                        priceCurrency: priceCurrency,
+                        safetyStock: safetyStock,
+                        currentStock: currentStock
+                    };
+                    
+                    // 检查是否已存在相同名称的商品
+                    const existingIndex = inventoryItems.findIndex(item => item.name === name);
+                    if (existingIndex >= 0 && overwrite) {
+                        inventoryItems[existingIndex] = item;
+                    } else if (existingIndex < 0) {
+                        inventoryItems.push(item);
+                    }
+                    
+                    importCount++;
+                }
+            }
+            
+            updateInventoryTable();
+            return importCount;
+        }
+        
+        // 获取星期几
+        function getWeekday(dateStr) {
+            const date = new Date(dateStr);
+            const weekdayIndex = date.getDay();
+            return weekdays[weekdayIndex];
+        }
+        
+        // 显示批量导入模态框
+        function showBulkImportModal() {
+            document.getElementById('bulkImportModal').style.display = 'flex';
+        }
+        
+        // 执行批量导入
+        function performBulkImport() {
+            const dataText = document.getElementById('bulkImportData').value;
+            if (!dataText.trim()) {
+                alert('请输入要导入的数据');
+                return;
+            }
+            
+            const lines = dataText.trim().split('\n');
+            let importCount = 0;
+            let errorCount = 0;
+            
+            lines.forEach((line, index) => {
+                const parts = line.split(',').map(part => part.trim());
+                if (parts.length >= 7) {
+                    try {
+                        const name = parts[0];
+                        const cost = parseFloat(parts[1]) || 0;
+                        const costCurrency = parts[2] || 'CNY';
+                        const price = parseFloat(parts[3]) || 0;
+                        const priceCurrency = parts[4] || 'CNY';
+                        const safetyStock = parseInt(parts[5]) || 0;
+                        const currentStock = parseInt(parts[6]) || 0;
+                        
+                        if (name) {
+                            const item = {
+                                id: inventoryItems.length + 1,
+                                name: name,
+                                cost: cost,
+                                costCurrency: costCurrency,
+                                price: price,
+                                priceCurrency: priceCurrency,
+                                safetyStock: safetyStock,
+                                currentStock: currentStock
+                            };
+                            
+                            inventoryItems.push(item);
+                            importCount++;
+                        }
+                    } catch (error) {
+                        console.error(`第${index + 1}行导入失败:`, error);
+                        errorCount++;
+                    }
+                }
+            });
+            
+            updateInventoryTable();
+            saveData();
+            
+            alert(`批量导入完成！成功导入${importCount}个商品，${errorCount}个失败。`);
+            closeModal('bulkImportModal');
+        }
+        
+        // 加载示例数据
+        function loadSampleData() {
+            if (confirm('确定要加载示例数据吗？当前数据不会被删除，示例数据将添加到现有数据中。')) {
+                // 添加示例库存数据
+                const sampleInventory = [
+                    { id: 1, name: "示例商品A", cost: 10.00, costCurrency: "CNY", price: 15.00, priceCurrency: "CNY", safetyStock: 20, currentStock: 100 },
+                    { id: 2, name: "示例商品B", cost: 8.00, costCurrency: "CNY", price: 12.00, priceCurrency: "CNY", safetyStock: 15, currentStock: 80 },
+                    { id: 3, name: "示例商品C", cost: 5.00, costCurrency: "CNY", price: 8.00, priceCurrency: "CNY", safetyStock: 30, currentStock: 150 }
+                ];
+                
+                sampleInventory.forEach(item => {
+                    if (!inventoryItems.some(existing => existing.name === item.name)) {
+                        inventoryItems.push(item);
+                    }
+                });
+                
+                // 添加示例日报数据
+                const today = new Date();
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date();
+                    date.setDate(today.getDate() - i);
+                    const dateStr = date.toISOString().split('T')[0];
+                    
+                    // 检查是否已存在该日期的记录
+                    if (!dailyReports.some(report => report.date === dateStr)) {
+                        const report = {
+                            id: new Date().getTime() + i,
+                            date: dateStr,
+                            weekday: weekdays[date.getDay()],
+                            recorder: "系统示例",
+                            weather: i % 2 === 0 ? "晴" : "阴",
+                            notes: "示例数据",
+                            exchangeRates: {...exchangeRates},
+                            expenses: [
+                                { category: "固定支出", item: "房租", amount: 1000, currency: "CNY", cnyAmount: 1000, note: "" },
+                                { category: "日常支出", item: "食材采购", amount: 500, currency: "CNY", cnyAmount: 500, note: "" }
+                            ],
+                            income: [
+                                { product: "示例商品A", yesterdayStock: 100, purchase: 0, sold: 20, price: 15.00, priceCurrency: "CNY", cost: 10.00, profit: 100, sales: 300, todayStock: 80 }
+                            ],
+                            losses: [],
+                            totalIncome: 300 + Math.random() * 200,
+                            totalExpense: 1500 + Math.random() * 300,
+                            netIncome: 0,
+                            timestamp: new Date().toISOString()
+                        };
+                        
+                        report.netIncome = report.totalIncome - report.totalExpense;
+                        dailyReports.push(report);
+                    }
+                }
+                
+                // 保存数据
+                saveData();
+                updateInventoryTable();
+                updateDataStats();
+                
+                alert('示例数据加载完成！');
+            }
+        }
+        
+        // 优化数据存储
+        function optimizeData() {
+            // 清理无效的日报记录
+            const originalCount = dailyReports.length;
+            dailyReports = dailyReports.filter(report => {
+                return report.date && report.date.length === 10; // 有效日期格式
+            });
+            
+            // 清理无效的库存记录
+            const originalInventoryCount = inventoryItems.length;
+            inventoryItems = inventoryItems.filter(item => {
+                return item.name && item.name.trim() !== '';
+            });
+            
+            // 保存优化后的数据
+            saveData();
+            
+            alert(`数据优化完成！清理了${originalCount - dailyReports.length}条无效日报记录和${originalInventoryCount - inventoryItems.length}个无效库存商品。`);
+        }
+        
+        // 检查数据完整性
+        function checkDataIntegrity() {
+            let issues = [];
+            
+            // 检查日报数据
+            dailyReports.forEach((report, index) => {
+                if (!report.date || report.date.length !== 10) {
+                    issues.push(`第${index + 1}条日报记录日期格式不正确`);
+                }
+                
+                if (report.totalIncome < 0 || report.totalExpense < 0) {
+                    issues.push(`第${index + 1}条日报记录金额为负数`);
+                }
+            });
+            
+            // 检查库存数据
+            inventoryItems.forEach((item, index) => {
+                if (!item.name || item.name.trim() === '') {
+                    issues.push(`第${index + 1}个库存商品名称为空`);
+                }
+                
+                if (item.cost < 0 || item.price < 0 || item.currentStock < 0 || item.safetyStock < 0) {
+                    issues.push(`第${index + 1}个库存商品数值为负数`);
+                }
+                
+                if (item.price > 0 && item.cost > item.price) {
+                    issues.push(`第${index + 1}个库存商品成本高于售价`);
+                }
+            });
+            
+            if (issues.length === 0) {
+                alert('数据完整性检查通过！未发现问题。');
+            } else {
+                const message = `发现${issues.length}个问题：\n\n` + issues.join('\n');
+                alert(message);
+            }
+        }
+        
+        // 清除所有数据
+        function clearAllData() {
+            if (confirm('确定要清除所有数据吗？此操作不可恢复！')) {
+                if (confirm('再次确认：这将删除所有日报记录、库存数据和设置。')) {
+                    dailyReports = [];
+                    inventoryItems = [];
+                    
+                    localStorage.removeItem('dailyReports');
+                    localStorage.removeItem('inventoryItems');
+                    localStorage.removeItem('exchangeRates');
+                    localStorage.removeItem('autoBackups');
+                    
+                    updateInventoryTable();
+                    updateDataStats();
+                    
+                    alert('所有数据已清除！');
+                }
+            }
+        }
+        
+        // 监听导出日期范围变化
+        document.getElementById('exportDateRange').addEventListener('change', function() {
+            // 移动端简化处理
+        });
+    </script>
+</body>
 </html>
